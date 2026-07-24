@@ -1,0 +1,918 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pierce</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23041c1c'/%3E%3Crect x='4' y='4' width='8' height='8' fill='%23ffe6cb'/%3E%3C/svg%3E">
+<style>
+/* ============================================================
+   Hermes system — one cream ink on deep teal, every surface a
+   tonal mix of the ink. Flat, not boxed. Mondwest display,
+   Courier Prime readouts, system sans body.
+   ============================================================ */
+@font-face{font-family:'Mondwest';src:url('/fonts/Mondwest-Regular.woff2') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:'Courier Prime';src:url('/fonts/CourierPrime-Regular.woff2') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:'Courier Prime';src:url('/fonts/CourierPrime-Bold.woff2') format('woff2');font-weight:700;font-display:swap}
+
+:root{
+  --bg:#041c1c;
+  --ink:#ffe6cb;
+  --card:color-mix(in srgb,var(--ink) 5%,var(--bg));
+  --card2:color-mix(in srgb,var(--ink) 8%,var(--bg));
+  --wash:color-mix(in srgb,var(--ink) 12%,var(--bg));
+  --line:color-mix(in srgb,var(--ink) 14%,transparent);
+  --line2:color-mix(in srgb,var(--ink) 26%,transparent);
+  --ink2:color-mix(in srgb,var(--ink) 78%,var(--bg));
+  --ink3:color-mix(in srgb,var(--ink) 58%,var(--bg));
+  --amber:#ffbd38;      /* one meaning: needs Aayush */
+  --green:#4ade80;      /* one meaning: resolved / moving forward */
+  --red:#ff6467;        /* one meaning: destructive / overdue */
+  --glow:rgba(255,189,56,.35);
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:'Courier Prime',ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  --display:'Mondwest',Georgia,serif;
+  --sh:0 1px 2px rgba(0,0,0,.5),0 10px 28px rgba(0,0,0,.42),0 28px 72px rgba(0,0,0,.38);
+  /* z scale: nav < overlay < dialog < toast */
+  --z-overlay:10;--z-dialog:20;--z-toast:30;
+}
+*{box-sizing:border-box;margin:0}
+html{font:15px/1.55 var(--sans);letter-spacing:0}
+body{background:var(--bg);color:var(--ink);min-height:100vh}
+/* atmosphere: warm glow vignette + grain, both static */
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;
+  background:radial-gradient(110rem 44rem at 50% -14rem,var(--glow),transparent 62%);opacity:.34}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:2;opacity:.05;
+  background:repeating-conic-gradient(var(--ink) 0% 25%,transparent 0% 50%) 0 0/2px 2px}
+::selection{background:var(--ink);color:var(--bg)}
+a{color:var(--ink)}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+input,select,textarea{font:14px/1.4 var(--sans);color:var(--ink);background:color-mix(in srgb,var(--ink) 5%,var(--bg));
+  border:1px solid var(--line);border-radius:6px;padding:7px 10px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--line2)}
+input::placeholder,textarea::placeholder{color:var(--ink3)}
+
+.wrap{max-width:1360px;margin:0 auto;padding:26px 40px 80px}
+
+/* ---------------- header ---------------- */
+header{display:flex;align-items:baseline;gap:34px;padding:6px 0 22px}
+.wordmark{font:400 21px var(--display);letter-spacing:.02em;white-space:nowrap}
+nav{display:flex;gap:22px;overflow-x:auto;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{font:400 13px var(--mono);text-transform:uppercase;letter-spacing:.07em;color:var(--ink3);
+  padding:4px 1px 7px;border-bottom:1px solid transparent;white-space:nowrap;position:relative}
+nav button:hover{color:var(--ink2)}
+nav button.on{color:var(--ink);border-bottom-color:var(--ink)}
+nav button .dot{position:absolute;top:2px;right:-8px;width:5px;height:5px;border-radius:50%;background:var(--amber)}
+nav button.add{color:var(--ink3);font-size:15px;padding-bottom:5px}
+nav button.add:hover{color:var(--ink)}
+.hright{margin-left:auto;display:flex;align-items:baseline;gap:18px}
+#clock{font:400 12px var(--mono);color:var(--ink3);letter-spacing:.06em;white-space:nowrap}
+#q{background:transparent;border:none;border-bottom:1px solid var(--line);border-radius:0;
+  font:400 13px var(--mono);padding:4px 2px 6px;width:230px;transition:border-color .2s}
+#q:focus{border-bottom-color:var(--ink)}
+
+/* search overlay */
+#results{position:absolute;top:100%;right:0;width:min(560px,90vw);max-height:60vh;overflow:auto;
+  background:var(--card);border:1px solid var(--line2);border-radius:10px;box-shadow:var(--sh);
+  padding:6px 0;display:none;z-index:var(--z-overlay)}
+#results .hit{padding:10px 16px;cursor:pointer}
+#results .hit:hover{background:var(--card2)}
+#results .hit+.hit{border-top:1px solid var(--line)}
+#results .path{font:400 11px var(--mono);color:var(--ink3);letter-spacing:.04em;margin-bottom:2px}
+#results .snip{font-size:13px;color:var(--ink2)}
+#results .snip b{color:var(--amber);font-weight:400}
+#results .none{padding:12px 16px;color:var(--ink3);font:400 12px var(--mono)}
+
+/* ---------------- shared ---------------- */
+.sec{display:flex;align-items:center;gap:14px;margin:0 0 14px}
+.sec h2{font:400 12px var(--mono);text-transform:uppercase;letter-spacing:.09em;color:var(--ink3)}
+.sec .n{font:400 12px var(--mono);color:var(--ink3)}
+.sec::after{content:'';flex:1;height:1px;background:var(--line)}
+.sec .act{font:400 12px var(--mono);color:var(--ink3);letter-spacing:.04em}
+.sec .act:hover{color:var(--ink)}
+
+h1.display,h2.display{font:400 34px/1.15 var(--display);letter-spacing:.01em;text-wrap:balance}
+.subline{font:400 12px var(--mono);color:var(--ink3);letter-spacing:.07em;text-transform:uppercase;margin-top:8px}
+.subline .warn{color:var(--amber)}
+
+.empty{color:var(--ink3);font-size:13px;padding:4px 0}
+.empty .cmd{font-family:var(--mono);font-size:12px;color:var(--ink2)}
+
+.btn{font:400 12px var(--mono);letter-spacing:.04em;padding:5px 13px;border:1px solid var(--line2);
+  border-radius:6px;color:var(--ink2);transition:color .15s,border-color .15s}
+.btn:hover{color:var(--ink);border-color:color-mix(in srgb,var(--ink) 45%,transparent)}
+.btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn.primary:hover{background:var(--ink2)}
+.btn.danger{color:var(--red);border-color:color-mix(in srgb,var(--red) 35%,transparent)}
+.btn.danger:hover{border-color:var(--red)}
+.btn.text{border:none;padding:5px 4px;color:var(--ink3)}
+.btn.text:hover{color:var(--ink)}
+
+.status{font:400 11px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--ink3)}
+.status.attn{color:var(--amber)}
+.status.good{color:var(--green)}
+.status.dead{color:var(--ink3)}
+
+/* record rows — flat list, hairline separated */
+.rows .row{display:flex;align-items:baseline;gap:14px;padding:13px 2px;border-bottom:1px solid var(--line);cursor:pointer}
+.rows .row:last-child{border-bottom:none}
+.rows .row:hover{background:var(--card)}
+.row .t{font-weight:500;font-size:15px}
+.row .desc{color:var(--ink3);font-size:13px;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.row .blocked{color:var(--amber);font-size:13px;margin-top:3px}
+.row .main{flex:1;min-width:0}
+.row .meta{font:400 11px var(--mono);color:var(--ink3);letter-spacing:.05em;white-space:nowrap}
+
+/* ---------------- today ---------------- */
+.masthead{margin:18px 0 8px}
+#needs{display:flex;flex-wrap:wrap;gap:6px 26px;margin:20px 0 4px}
+#needs .nd{font-size:13.5px;color:var(--ink2);cursor:pointer;display:flex;gap:9px;align-items:baseline}
+#needs .nd::before{content:'●';font-size:8px;color:var(--amber);transform:translateY(-2px)}
+#needs .nd:hover{color:var(--ink)}
+#needs .nd.clear::before{color:var(--green)}
+#needs .nd.clear{cursor:default}
+/* outcome stats strip — evaluation layer readout, same ink as the subline */
+#stats{font:400 12px var(--mono);color:var(--ink3);letter-spacing:.05em;margin-top:14px}
+#stats b{font-weight:400;color:var(--ink2)}
+#stats .sep{margin:0 10px;opacity:.45}
+
+.today-grid{display:grid;grid-template-columns:minmax(0,1fr) 372px;gap:56px;margin-top:34px}
+.rail{display:flex;flex-direction:column;gap:44px;min-width:0}
+.mcol{display:flex;flex-direction:column;gap:44px;min-width:0}
+
+/* briefing prose */
+.prose{max-width:72ch;font-size:15px;color:var(--ink2)}
+.prose p{margin:0 0 14px}
+.prose strong{color:var(--ink);font-weight:600}
+.prose h3{font:400 17px var(--display);color:var(--ink);margin:26px 0 10px;letter-spacing:.02em}
+.prose h3:first-child{margin-top:0}
+.prose ul,.prose ol{margin:0 0 14px;padding-left:22px}
+.prose li{margin:0 0 9px}
+.prose li::marker{font-family:var(--mono);color:var(--ink3);font-size:12px}
+.prose code{font:400 13px var(--mono);background:var(--card2);padding:1px 5px;border-radius:4px}
+.prose a,.prose .rl{color:var(--ink);text-decoration:underline;text-decoration-color:var(--line2);text-underline-offset:3px;cursor:pointer}
+.prose a:hover,.prose .rl:hover{text-decoration-color:var(--ink)}
+
+/* suggested actions */
+.prop{display:flex;gap:16px;padding:14px 2px;border-bottom:1px solid var(--line);align-items:baseline}
+.prop:last-child{border-bottom:none}
+.prop .no{font:400 13px var(--mono);color:var(--ink3);min-width:18px}
+.prop .body{flex:1;font-size:14px;color:var(--ink2)}
+.prop .body b{color:var(--ink);font-weight:600}
+.prop .ops{display:flex;gap:8px;white-space:nowrap}
+.prop .done{font:400 11px var(--mono);letter-spacing:.07em;text-transform:uppercase}
+.prop .done.adopted{color:var(--green)}
+.prop .done.dismissed{color:var(--ink3)}
+
+/* outbox */
+.obx{padding:15px 0;border-bottom:1px solid var(--line)}
+.obx:last-child{border-bottom:none}
+.obx .top{display:flex;justify-content:space-between;gap:12px;align-items:baseline;cursor:pointer}
+.obx .t{font-weight:500;font-size:14.5px}
+.obx .dest{font-size:12.5px;color:var(--ink3);margin-top:4px}
+.obx .red{font:400 11px var(--mono);letter-spacing:.06em;margin-top:4px;color:var(--ink3)}
+.obx .red .pass{color:var(--green)} .obx .red .fail{color:var(--red)}
+.obx .ops{display:flex;gap:8px;margin-top:11px}
+
+/* questions */
+.qq{padding:14px 0;border-bottom:1px solid var(--line)}
+.qq:last-child{border-bottom:none}
+.qq .text{font-size:14px;color:var(--ink2)}
+.qq .when{font:400 11px var(--mono);color:var(--ink3);letter-spacing:.05em;margin-top:5px}
+.qq .ans{display:flex;gap:8px;margin-top:10px}
+.qq .ans input{flex:1;font-size:13px;padding:6px 9px}
+
+/* deadlines */
+.dl{display:flex;gap:13px;align-items:baseline;padding:9px 2px;border-bottom:1px solid var(--line)}
+.dl:last-child{border-bottom:none}
+.dl .days{font:700 12px var(--mono);min-width:38px;text-align:right;color:var(--ink3)}
+.dl .days.soon{color:var(--amber)} .dl .days.over{color:var(--red)}
+.dl .it{flex:1;font-size:13.5px;min-width:0}
+.dl .it .dom{font:400 11px var(--mono);color:var(--ink3);letter-spacing:.05em;margin-left:7px}
+.dl .tick{font-size:12px;color:var(--ink3);padding:1px 7px;border:1px solid var(--line2);border-radius:5px}
+.dl .tick:hover{color:var(--green);border-color:var(--green)}
+.dlform{display:none;gap:8px;margin-top:12px;flex-wrap:wrap}
+.dlform.open{display:flex}
+.dlform input[type=date]{width:140px} .dlform select{width:110px} .dlform .item{flex:1;min-width:150px}
+
+/* calendar */
+.gcal{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
+.gcal iframe{display:block;width:100%;height:326px;border:0;filter:invert(.915) hue-rotate(180deg) saturate(.65)}
+.gcal-note{font:400 11px var(--mono);color:var(--ink3);margin-top:8px;letter-spacing:.04em;display:flex;gap:14px}
+.gcal-note a{color:var(--ink3);text-decoration:none} .gcal-note a:hover{color:var(--ink)}
+.gcal-note button{font:inherit;color:var(--ink3);letter-spacing:inherit} .gcal-note button:hover{color:var(--ink)}
+
+/* tell the OS */
+.upd textarea{width:100%;min-height:56px;resize:vertical;font-size:14px}
+.updrow{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:9px}
+.updrow .hint{font:400 11px var(--mono);color:var(--ink3);letter-spacing:.04em}
+
+/* drag reorder */
+.dragging{opacity:.45}
+.dropbefore{box-shadow:inset 0 2px 0 var(--ink2)}
+
+/* activity */
+.feed .fr{display:flex;gap:13px;padding:7px 2px;font-size:13px;border-bottom:1px solid var(--line);align-items:baseline}
+.feed .fr:last-child{border-bottom:none}
+.feed .ts{font:400 11px var(--mono);color:var(--ink3);white-space:nowrap;letter-spacing:.03em}
+.feed .ty{font:400 11px var(--mono);color:var(--ink2);text-transform:uppercase;letter-spacing:.06em;min-width:58px}
+.feed .ln{color:var(--ink3);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---------------- kanban ---------------- */
+.kwrap{overflow-x:auto;padding-bottom:6px}
+.kanban{display:grid;grid-template-columns:repeat(7,minmax(158px,1fr));gap:14px;min-height:200px}
+.kcol h3{font:400 11px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);
+  padding:0 2px 9px;border-bottom:1px solid var(--line);margin-bottom:11px;display:flex;justify-content:space-between}
+.kcol.over h3{color:var(--ink);border-bottom-color:var(--ink)}
+.kcard{background:var(--card);border-radius:8px;padding:11px 13px;margin-bottom:9px;cursor:pointer;transition:background .15s}
+.kcard:hover{background:var(--card2)}
+.kcard .t{font-size:13.5px;font-weight:500;line-height:1.35}
+.kcard .m{font:400 10.5px var(--mono);color:var(--ink3);letter-spacing:.05em;margin-top:6px;text-transform:uppercase}
+.kcard .m .p1{color:var(--amber)}
+.kcard.flash{animation:flash 1.4s}
+@keyframes flash{0%,45%{background:var(--wash)}100%{background:var(--card)}}
+.karchive{margin-top:6px}
+
+/* ---------------- dialogs ---------------- */
+dialog{background:var(--card);color:var(--ink);border:1px solid var(--line2);border-radius:12px;
+  box-shadow:var(--sh);padding:0;width:min(720px,92vw);max-height:86vh;margin:auto}
+dialog::backdrop{background:rgba(1,10,10,.72)}
+dialog[open]{animation:din .18s cubic-bezier(.22,1,.36,1)}
+@keyframes din{from{opacity:0;transform:translateY(6px) scale(.985)}to{opacity:1;transform:none}}
+.dbody{padding:28px 32px 26px;overflow:auto;max-height:calc(86vh - 2px)}
+.dtitle{font:400 22px/1.25 var(--display);letter-spacing:.01em;padding-right:30px}
+.dmeta{font:400 11.5px var(--mono);color:var(--ink3);letter-spacing:.05em;margin-top:7px;text-transform:uppercase}
+.dx{position:absolute;top:14px;right:16px;color:var(--ink3);font-size:17px;padding:4px 8px}
+.dx:hover{color:var(--ink)}
+.seg{display:flex;gap:0;margin:18px 0 0;border:1px solid var(--line2);border-radius:7px;overflow:hidden;width:max-content;max-width:100%;flex-wrap:wrap}
+.seg button{font:400 11px var(--mono);letter-spacing:.05em;text-transform:uppercase;padding:6px 12px;color:var(--ink3)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button:hover{color:var(--ink)}
+.seg button.cur{background:var(--ink);color:var(--bg);cursor:default}
+.dprose{margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}
+.dnote{display:flex;gap:9px;margin-top:22px}
+.dnote input{flex:1}
+.dops{display:flex;gap:9px;margin-top:16px}
+
+/* composer */
+#composer .dbody{padding:26px 30px}
+.ctabs{display:flex;gap:18px;margin-bottom:20px}
+.ctabs button{font:400 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);padding-bottom:5px;border-bottom:1px solid transparent}
+.ctabs button.on{color:var(--ink);border-bottom-color:var(--ink)}
+.cform{display:grid;gap:13px}
+.cform .duo2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.cform label{font:400 11px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);display:block;margin-bottom:5px}
+.cform textarea{min-height:74px;resize:vertical}
+.cfoot{display:flex;justify-content:flex-end;gap:10px;margin-top:8px}
+
+/* toast */
+#toast{position:fixed;bottom:26px;right:28px;z-index:var(--z-toast);background:var(--ink);color:var(--bg);
+  font:400 12.5px var(--mono);letter-spacing:.03em;padding:9px 16px;border-radius:7px;box-shadow:var(--sh);
+  opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;pointer-events:none}
+#toast.show{opacity:1;transform:none}
+
+/* ---------------- responsive ---------------- */
+@media (max-width:1100px){
+  .today-grid{grid-template-columns:1fr;gap:44px}
+  .wrap{padding:20px 26px 60px}
+}
+@media (max-width:768px){
+  header{flex-wrap:wrap;gap:14px 24px}
+  .hright{width:100%;margin-left:0}
+  #q{flex:1}
+  h1.display,h2.display{font-size:27px}
+  .wrap{padding:16px 18px 48px}
+  .kanban{grid-template-columns:repeat(7,minmax(150px,1fr))}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="wordmark">Pierce</div>
+  <nav id="nav"></nav>
+  <div class="hright" style="position:relative">
+    <span id="clock"></span>
+    <input id="q" placeholder="search — /" autocomplete="off" spellcheck="false">
+    <div id="results"></div>
+  </div>
+</header>
+
+<main id="main"></main>
+</div>
+
+<dialog id="drawer">
+  <div class="dbody" style="position:relative">
+    <button class="dx" onclick="drawer.close()" aria-label="close">✕</button>
+    <div class="dtitle" id="dTitle"></div>
+    <div class="dmeta" id="dMeta"></div>
+    <div class="seg" id="dSeg"></div>
+    <div class="dops" id="dOps"></div>
+    <div class="dprose prose" id="dBody"></div>
+    <div class="dnote">
+      <input id="dNote" placeholder="add a log note…">
+      <button class="btn" onclick="addNote()">log</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="composer">
+  <div class="dbody" style="position:relative">
+    <button class="dx" onclick="composer.close()" aria-label="close">✕</button>
+    <div class="ctabs">
+      <button id="ctRec" class="on" onclick="compMode('rec')">New record</button>
+      <button id="ctArea" onclick="compMode('area')">New area</button>
+    </div>
+    <form class="cform" id="cfRec" onsubmit="return createRec(event)">
+      <div class="duo2">
+        <div><label for="cCol">collection</label><select id="cCol" style="width:100%">
+          <option value="projects">Project</option><option value="pipeline">Opportunity (pipeline)</option>
+          <option value="outreach">Outreach thread</option><option value="ventures">Venture</option>
+          <option value="courses">Course</option></select></div>
+        <div><label for="cArea">area</label><select id="cArea" style="width:100%"></select></div>
+      </div>
+      <div><label for="cTitle">title</label><input id="cTitle" style="width:100%" required placeholder="Jane Street — QT Intern / Fourier optics RA / …"></div>
+      <div class="duo2">
+        <div><label for="cPri">priority</label><select id="cPri" style="width:100%"><option value="2">P2 — normal</option><option value="1">P1 — top</option><option value="3">P3 — low</option></select></div>
+        <div><label for="cDue">due (optional)</label><input id="cDue" type="date" style="width:100%"></div>
+      </div>
+      <div><label for="cBody">what it is (optional)</label><textarea id="cBody" style="width:100%" placeholder="**What it is:** …&#10;**Why it matters:** …"></textarea></div>
+      <div class="cfoot"><button type="button" class="btn text" onclick="composer.close()">cancel</button>
+        <button class="btn primary" type="submit">create</button></div>
+    </form>
+    <form class="cform" id="cfArea" style="display:none" onsubmit="return createArea(event)">
+      <div><label for="aLabel">area name</label><input id="aLabel" style="width:100%" required placeholder="Athletics / Open Source / …"></div>
+      <div class="empty">A new tab appears for it. File projects into it with the composer, or add <span class="cmd">area: &lt;id&gt;</span> to any record.</div>
+      <div class="cfoot"><button type="button" class="btn text" onclick="composer.close()">cancel</button>
+        <button class="btn primary" type="submit">add area</button></div>
+    </form>
+  </div>
+</dialog>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const api=(p,o)=>fetch(p,o).then(r=>r.json());
+const post=(p,b)=>api(p,{method:'POST',body:JSON.stringify(b)});
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const drawer=$('drawer'),composer=$('composer');
+
+const DEFAULT_AREAS=[
+  {id:'career',label:'Career',collections:['pipeline','outreach']},
+  {id:'research',label:'Research',collections:[]},
+  {id:'academics',label:'Academics',collections:['courses']},
+  {id:'business',label:'Business',collections:['ventures']}];
+const DIRMAP={'career/pipeline':'pipeline','career/outreach':'outreach','projects':'projects',
+  'ventures':'ventures','outbox':'outbox','uni/courses':'courses'};
+const STATUS_HUE={ 'needs-review':'attn','ready':'attn',
+  'replied':'good','meeting':'good','offer':'good','live':'good','approved':'good','done':'good',
+  'closed':'dead','killed':'dead','discarded':'dead','dormant':'dead','shelved':'dead','sent':'dead','paused':'dead'};
+const TERMINAL=new Set(['closed','done','killed','sent','discarded','dormant','shelved']);
+
+let S=null, cur=null, tab=(location.hash||'#today').slice(1);
+
+/* ---------- tiny markdown (escape-first) ---------- */
+function recLink(href){
+  let h=href.replace(/^(\.\.\/|\.\/)+/,'').replace(/^os\//,'');
+  const i=h.lastIndexOf('/');
+  if(i<0)return null;
+  const col=DIRMAP[h.slice(0,i)], file=h.slice(i+1);
+  if(col&&S&&S.collections[col]&&S.collections[col].some(r=>r.file===file))return{col,file};
+  return null;
+}
+function inline(s){
+  s=s.replace(/`([^`]+)`/g,(m,c)=>'<code>'+c+'</code>');
+  s=s.replace(/\[([^\]]+)\]\(([^)]+)\)/g,(m,t,h)=>{
+    const rl=recLink(h);
+    if(rl)return `<span class="rl" data-col="${esc(rl.col)}" data-file="${esc(rl.file)}">${t}</span>`;
+    if(/^https?:\/\//.test(h))return `<a href="${esc(h)}" target="_blank" rel="noopener">${t}</a>`;
+    return t;
+  });
+  s=s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  s=s.replace(/(^|\s)\*([^*\s][^*]*)\*/g,'$1<em>$2</em>');
+  return s;
+}
+function md(src){
+  const lines=esc(src).split('\n');let out=[],list=null;
+  const flush=()=>{if(list){out.push(`<${list.t}>`+list.items.map(i=>'<li>'+inline(i)+'</li>').join('')+`</${list.t}>`);list=null}};
+  for(const raw of lines){
+    const l=raw.trimEnd();
+    if(!l.trim()){flush();continue}
+    let m;
+    if(m=l.match(/^#{1,4}\s+(.*)/)){flush();out.push('<h3>'+inline(m[1])+'</h3>');continue}
+    if(m=l.match(/^\*\*([^*]+)\*\*:?\s*$/)){flush();out.push('<h3>'+inline(m[1])+'</h3>');continue}
+    if(m=l.match(/^[-*]\s+(.*)/)){if(!list||list.t!=='ul'){flush();list={t:'ul',items:[]}}list.items.push(m[1]);continue}
+    if(m=l.match(/^\d+\.\s+(.*)/)){if(!list||list.t!=='ol'){flush();list={t:'ol',items:[]}}list.items.push(m[1]);continue}
+    if(list&&/^\s{2,}/.test(raw)){list.items[list.items.length-1]+=' '+l.trim();continue}
+    flush();out.push('<p>'+inline(l)+'</p>');
+  }
+  flush();return out.join('');
+}
+
+/* ---------- state ---------- */
+async function load(){
+  S=await api('/api/state');
+  S.areas=S.areas||DEFAULT_AREAS;
+  S.questions=S.questions||[];
+  render();
+}
+function areas(){return S.areas}
+function openQs(){return S.questions.filter(q=>q.status==='open')}
+function liveOutbox(){return S.collections.outbox.filter(r=>!['sent','discarded'].includes(r.meta.status))}
+
+/* ---------- render root ---------- */
+function render(){
+  if(drawer.open||composer.open)return;   // don't clobber an open dialog on poll
+  const kept=keepFormState();
+  nav();
+  const known=['today',...areas().map(a=>a.id)];
+  if(!known.includes(tab))tab='today';
+  $('main').innerHTML = tab==='today'?today():areaPage(areas().find(a=>a.id===tab));
+  wire();
+  restoreFormState(kept);
+}
+/* Rebuilding #main replaces every element, which used to wipe in-progress
+   typing (Tell the OS, deadline form, question answers) on the 30s poll and
+   after any click that reloads state. Capture volatile form state before the
+   rebuild, put it back after — including focus and caret so typing continues
+   uninterrupted. */
+function formKey(el){return el.id?'#'+el.id:el.dataset.qin!=null?'qin:'+el.dataset.qin:null}
+function findByKey(m,k){return !k?null:k[0]==='#'?m.querySelector(k):m.querySelector(`[data-qin="${CSS.escape(k.slice(4))}"]`)}
+function keepFormState(){
+  const m=$('main'),a=document.activeElement,vals={};
+  m.querySelectorAll('input,textarea,select').forEach(el=>{const k=formKey(el);if(k&&el.value)vals[k]=el.value});
+  return {vals,dlOpen:!!m.querySelector('#dlform.open'),
+    focus:a&&m.contains(a)?formKey(a):null,
+    caret:a&&m.contains(a)&&a.selectionStart!=null?[a.selectionStart,a.selectionEnd]:null};
+}
+function restoreFormState(s){
+  const m=$('main');
+  Object.entries(s.vals).forEach(([k,v])=>{const el=findByKey(m,k);if(el)el.value=v});
+  if(s.dlOpen){const f=m.querySelector('#dlform');f&&f.classList.add('open')}
+  const el=findByKey(m,s.focus);
+  if(el){el.focus({preventScroll:true});if(s.caret&&el.setSelectionRange)try{el.setSelectionRange(s.caret[0],s.caret[1])}catch(_){}}
+}
+function nav(){
+  const needsDot=liveOutbox().some(r=>r.meta.status==='needs-review')||openQs().length>0;
+  $('nav').innerHTML=
+    `<button data-t="today" class="${tab==='today'?'on':''}">Today${needsDot?'<span class="dot"></span>':''}</button>`+
+    areas().map(a=>`<button data-t="${esc(a.id)}" class="${tab===a.id?'on':''}">${esc(a.label)}</button>`).join('')+
+    `<button class="add" title="new record or area" onclick="openComposer()">+</button>`;
+  $('nav').querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{tab=b.dataset.t;location.hash=tab;render()});
+}
+
+/* ---------- today ---------- */
+function fmtDate(){
+  const d=new Date();
+  const w=d.toLocaleDateString('en-US',{weekday:'long'}),mo=d.toLocaleDateString('en-US',{month:'long'});
+  return `${w}, ${d.getDate()} ${mo}`;
+}
+function today(){
+  const b=S.briefing;
+  const stale=b&&!b.today;
+  return `
+  <div class="masthead">
+    <h1 class="display">${fmtDate()}</h1>
+    <div class="subline">${b?`Morning briefing · ${esc(b.date)}${stale?' · <span class="warn">stale — run /os-reflect</span>':''}`:'No briefing yet · run /os-reflect'}</div>
+    <div id="needs">${needsHtml()}</div>
+    <div id="stats">${statsHtml()}</div>
+  </div>
+  <div class="today-grid">
+    <div class="mcol">
+      ${b?`<section><div class="sec"><h2>Briefing</h2></div><article class="prose">${md(briefingBody(b.body))}</article></section>`:''}
+      ${propsHtml()}
+      <section><div class="sec"><h2>Activity</h2></div><div class="feed">${feedHtml()}</div></section>
+    </div>
+    <div class="rail">
+      <section><div class="sec"><h2>Tell the OS</h2></div>
+        <form class="upd" onsubmit="return postUpd(event)">
+          <textarea id="updText" placeholder="Anything it should know — progress, decisions, new context…"></textarea>
+          <div class="updrow"><span class="hint">filed to memory, folded into the records it touches</span>
+            <button class="btn primary">post</button></div>
+        </form></section>
+      <section><div class="sec"><h2>Outbox</h2><span class="n">${liveOutbox().length||''}</span></div>${outboxHtml()}</section>
+      <section><div class="sec"><h2>Questions for me</h2><span class="n">${openQs().length||''}</span></div>${questionsHtml()}</section>
+      <section><div class="sec"><h2>Deadlines</h2><button class="act" onclick="dlToggle()">+ add</button></div>${deadlinesHtml(8)}
+        <form class="dlform" id="dlform" onsubmit="return dlAdd(event)">
+          <input type="date" id="dlDate" required><select id="dlDom"><option>uni</option><option>career</option><option>research</option><option>venture</option></select>
+          <input class="item" id="dlItem" placeholder="what's due" required><button class="btn">add</button>
+        </form></section>
+      <section><div class="sec"><h2>Calendar</h2></div>${calendarHtml()}</section>
+    </div>
+  </div>`;
+}
+function statsHtml(){
+  const s=S.stats;if(!s)return'';
+  const o=s.outreach,p=s.pipeline,d=s.outbox;
+  const rate=o.reply_rate===null?'':` (<b>${o.reply_rate}%</b>)`;
+  return `outreach <b>${o.contacted}</b> contacted · <b>${o.replied}</b> replied${rate}`+
+    `<span class="sep">|</span>pipeline <b>${p.open}</b> open · <b>${p.applied}</b> applied`+
+    (p.interviewing?` · <b>${p.interviewing}</b> interviewing`:'')+(p.offers?` · <b>${p.offers}</b> offers`:'')+
+    `<span class="sep">|</span>outbox <b>${d.waiting}</b> waiting · <b>${d.sent}</b> sent`;
+}
+function needsHtml(){
+  const n=S.needs;
+  if(!n.length)return `<span class="nd clear">Nothing needs you. Go build.</span>`;
+  return n.map((x,i)=>`<span class="nd" data-need="${i}">${esc(x.label)}</span>`).join('');
+}
+function propsHtml(){
+  const ps=proposals();
+  if(!ps.length)return'';
+  return `<section><div class="sec"><h2>Suggested actions</h2></div>`+ps.map((p,i)=>{
+    const dec=localStorage.getItem(propKey(i));
+    return `<div class="prop"><span class="no">${i+1}</span>
+      <span class="body"><b>${inline(esc(p.title))}.</b> ${inline(esc(p.rest))}</span>
+      ${dec?`<span class="done ${dec}">${dec}</span>`
+        :`<span class="ops"><button class="btn" data-prop="${i}" data-dec="adopted">adopt</button>
+          <button class="btn text" data-prop="${i}" data-dec="dismissed">dismiss</button></span>`}</div>`;
+  }).join('')+`</section>`;
+}
+/* proposals are extracted into Suggested actions, so the briefing article
+   drops that section to avoid saying everything twice */
+function briefingBody(body){
+  if(!proposals().length)return body;
+  const lines=body.split('\n');let out=[],skip=false;
+  for(const l of lines){
+    if(/^\*\*Improvement proposals\*\*/.test(l.trimEnd())){skip=true;continue}
+    if(skip&&/^\*\*[^*]+\*\*:?\s*$/.test(l.trimEnd()))skip=false;
+    if(!skip)out.push(l);
+  }
+  return out.join('\n');
+}
+function proposals(){
+  const b=S.briefing;if(!b)return[];
+  const lines=b.body.split('\n');let inSec=false,items=[];
+  for(const raw of lines){
+    const l=raw.trimEnd();
+    if(/^\*\*Improvement proposals\*\*/.test(l)){inSec=true;continue}
+    if(inSec&&/^\*\*[^*]+\*\*:?\s*$/.test(l))break;
+    if(!inSec)continue;
+    const m=l.match(/^\d+\.\s+(.*)/);
+    if(m)items.push(m[1]);
+    else if(items.length&&l.trim())items[items.length-1]+=' '+l.trim();
+  }
+  return items.map(t=>{
+    const m=t.match(/^\*\*([^*]+?)\.?\*\*\s*(.*)/);
+    return m?{title:m[1],rest:m[2]}:{title:t.split('.')[0],rest:t.slice(t.split('.')[0].length+1).trim()};
+  });
+}
+const propKey=i=>`prop-${S.briefing.date}-${i}`;
+function outboxHtml(){
+  const recs=liveOutbox();
+  if(!recs.length)return`<div class="empty">Outbox clear — nothing awaiting your approval.</div>`;
+  return recs.map(r=>{
+    const st=r.meta.status,dest=(r.body.match(/\*\*Destination:\*\*\s*(.+)/)||[])[1];
+    const red=(r.body.match(/\*\*Redactor:\*\*\s*(.+)/)||[])[1];
+    return `<div class="obx">
+      <div class="top" data-open="outbox/${esc(r.file)}"><span class="t">${esc(r.meta.title)}</span>
+        <span class="status ${STATUS_HUE[st]||''}">${esc(st)}</span></div>
+      ${dest?`<div class="dest">${esc(dest)}</div>`:''}
+      ${red?`<div class="red">redactor: <span class="${/pass/i.test(red)?'pass':/fail/i.test(red)?'fail':''}">${esc(red)}</span></div>`:''}
+      <div class="ops">${st==='needs-review'
+        ?`<button class="btn primary" data-obx="${esc(r.file)}" data-st="approved">approve</button>
+          <button class="btn danger" data-obx="${esc(r.file)}" data-st="discarded">discard</button>`
+        :`<button class="btn" data-obx="${esc(r.file)}" data-st="sent">mark sent</button>
+          <button class="btn text" data-obx="${esc(r.file)}" data-st="needs-review">reopen</button>`}</div>
+    </div>`;
+  }).join('');
+}
+function questionsHtml(){
+  const qs=openQs();
+  if(!qs.length)return`<div class="empty">No open questions — the OS has what it needs.</div>`;
+  return qs.map(q=>`<div class="qq" data-drag="questions" data-dragid="${esc(q.id)}">
+    <div class="text">${esc(q.text)}</div>
+    <div class="when">asked ${esc(q.asked)}</div>
+    <div class="ans"><input placeholder="answer…" data-qin="${esc(q.id)}">
+      <button class="btn" data-qbtn="${esc(q.id)}">answer</button></div>
+  </div>`).join('');
+}
+function deadlinesHtml(limit){
+  const ds=S.deadlines.filter(d=>d.status!=='done').slice(0,limit||99);
+  if(!ds.length)return`<div class="empty">No deadlines on the horizon.</div>`;
+  return ds.map(d=>`<div class="dl">
+    <span class="days ${d.days<0?'over':d.days<=3?'soon':''}">${d.days<0?d.days:d.days+'d'}</span>
+    <span class="it" ${d.src!=='uni'?`data-open="${esc(d.src)}" style="cursor:pointer"`:''}>${esc(d.item)}<span class="dom">${esc(d.domain)}</span></span>
+    ${d.src==='uni'?`<button class="tick" title="mark done" data-dld="${esc(d.date)}" data-dli="${esc(d.item)}">✓</button>`:''}
+  </div>`).join('');
+}
+function calendarHtml(){
+  const cal=localStorage.getItem('gcal-src')||'';
+  const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const src=`https://calendar.google.com/calendar/embed?src=${encodeURIComponent(cal)}&mode=AGENDA&showTitle=0&showNav=1&showPrint=0&showTabs=0&showCalendars=0&showTz=0&ctz=${encodeURIComponent(tz)}`;
+  return `<div class="gcal"><iframe src="${src}" loading="lazy" title="Google Calendar"></iframe></div>
+  <div class="gcal-note"><span>${esc(cal)}</span>
+    <button onclick="calSrc()">change</button>
+    <a href="https://calendar.google.com/calendar/u/0/r" target="_blank" rel="noopener">open ↗</a></div>`;
+}
+function calSrc(){
+  const v=prompt('Calendar ID (email of the calendar to embed):',localStorage.getItem('gcal-src')||'');
+  if(v){localStorage.setItem('gcal-src',v.trim());render()}
+}
+function feedHtml(){
+  return S.feed.slice(0,10).map(x=>`<div class="fr"><span class="ts">${esc(x.ts.slice(5))}</span>
+    <span class="ty">${esc(x.type)}</span><span class="ln">${esc(x.line)}</span></div>`).join('')
+    ||'<div class="empty">quiet so far</div>';
+}
+
+/* ---------- area pages ---------- */
+function areaPage(a){
+  if(!a)return'';
+  const parts=[`<div class="masthead" style="margin-bottom:34px"><h1 class="display">${esc(a.label)}</h1></div>`];
+  for(const col of a.collections){
+    if(col==='pipeline')parts.push(kanbanHtml());
+    else parts.push(listHtml(col,S.collections[col],colLabel(col)));
+  }
+  const projs=S.collections.projects.filter(r=>(r.meta.area||'')===a.id);
+  parts.push(listHtml('projects',projs,'Projects',a.id));
+  if(a.id==='academics')parts.push(academicsExtra());
+  return parts.join('');
+}
+function colLabel(c){return{pipeline:'Pipeline — summer 2027',outreach:'Outreach',ventures:'Ventures',courses:'Courses',projects:'Projects',outbox:'Outbox'}[c]||c}
+function kanbanHtml(){
+  const recs=S.collections.pipeline,states=S.enums.opportunity.filter(s=>s!=='closed');
+  const closed=recs.filter(r=>r.meta.status==='closed');
+  return `<section style="margin-bottom:46px"><div class="sec"><h2>Pipeline — summer 2027</h2><span class="n">${recs.length-closed.length}</span></div>
+  <div class="kwrap"><div class="kanban">${states.map(st=>{
+    const cards=recs.filter(r=>r.meta.status===st);
+    return `<div class="kcol" data-kst="${st}"><h3><span>${st}</span><span>${cards.length||''}</span></h3>
+      ${cards.map(r=>`<div class="kcard" data-drag="pipeline" data-dragid="${esc(r.file)}" data-kst="${st}" data-kf="${esc(r.file)}" data-open="pipeline/${esc(r.file)}">
+        <div class="t">${esc(r.meta.title)}</div>
+        <div class="m">${r.meta.priority==='1'?'<span class="p1">P1</span>':'P'+esc(r.meta.priority||'2')} · cpt ${esc(r.meta.cpt||'check')}${r.meta.due?' · due '+esc(r.meta.due):''}</div>
+      </div>`).join('')}</div>`;}).join('')}</div></div>
+  ${closed.length?`<div class="karchive"><button class="btn text" onclick="this.nextElementSibling.style.display='block';this.remove()">closed (${closed.length}) — show</button>
+    <div style="display:none" class="rows">${closed.map(r=>rowHtml('pipeline',r)).join('')}</div></div>`:''}
+  </section>`;
+}
+function rowHtml(col,r){
+  const m=r.meta;
+  const first=(r.body.match(/\*\*(?:Thesis[^:]*|What it is)[^:]*:\*\*\s*(.+)/)||[])[1]||'';
+  const blocked=col==='projects'&&(r.body.match(/\*\*Blocked on:\*\*\s*(.+)/)||[])[1];
+  return `<div class="row" data-drag="${col}" data-dragid="${esc(r.file)}" data-open="${col}/${esc(r.file)}">
+    <div class="main"><span class="t">${esc(m.title)}</span>
+      ${first?`<div class="desc">${esc(first)}</div>`:''}
+      ${blocked?`<div class="blocked">blocked — ${esc(blocked)}</div>`:''}</div>
+    <span class="meta">${m.due?'due '+esc(m.due)+' · ':''}${esc(m.updated||'')}</span>
+    <span class="status ${STATUS_HUE[m.status]||''}">${esc(m.status)}</span></div>`;
+}
+function listHtml(col,recs,label,areaId){
+  const live=recs.filter(r=>!TERMINAL.has(r.meta.status)),arch=recs.filter(r=>TERMINAL.has(r.meta.status));
+  const emptyMsg={ventures:'No ventures yet. Bring an idea — <span class="cmd">/venture-brief</span> vets it into a one-page brief — or add one with +.',
+    outreach:'No live threads. <span class="cmd">/cold-outreach</span> starts one.',
+    projects:'Nothing filed here yet — use + to add a project to this area.',
+    courses:'No courses yet — <span class="cmd">/course-track</span> logs them.'}[col]||'None yet.';
+  return `<section style="margin-bottom:46px"><div class="sec"><h2>${esc(label)}</h2><span class="n">${live.length||''}</span></div>
+    ${live.length?`<div class="rows">${live.map(r=>rowHtml(col,r)).join('')}</div>`:`<div class="empty">${emptyMsg}</div>`}
+    ${arch.length?`<div class="karchive"><button class="btn text" onclick="this.nextElementSibling.style.display='block';this.remove()">archive (${arch.length}) — show</button>
+      <div style="display:none" class="rows">${arch.map(r=>rowHtml(col,r)).join('')}</div></div>`:''}
+  </section>`;
+}
+function academicsExtra(){
+  return `<section style="margin-bottom:46px"><div class="sec"><h2>All deadlines</h2><button class="act" onclick="dlToggle()">+ add</button></div>
+    ${deadlinesHtml()}
+    <form class="dlform" id="dlform" onsubmit="return dlAdd(event)">
+      <input type="date" id="dlDate" required><select id="dlDom"><option>uni</option><option>career</option><option>research</option><option>venture</option></select>
+      <input class="item" id="dlItem" placeholder="what's due" required><button class="btn">add</button>
+    </form></section>`;
+}
+
+/* ---------- wiring ---------- */
+function wire(){
+  document.querySelectorAll('[data-open]').forEach(el=>el.addEventListener('click',e=>{
+    if(e.target.closest('button'))return;
+    const[col,...f]=el.dataset.open.split('/');openRec(col,f.join('/'));
+  }));
+  document.querySelectorAll('[data-need]').forEach(el=>el.onclick=()=>needAct(+el.dataset.need));
+  document.querySelectorAll('[data-obx]').forEach(b=>b.onclick=()=>obxAct(b.dataset.obx,b.dataset.st));
+  document.querySelectorAll('[data-prop]').forEach(b=>b.onclick=()=>propAct(+b.dataset.prop,b.dataset.dec));
+  document.querySelectorAll('[data-qbtn]').forEach(b=>b.onclick=()=>answerQ(b.dataset.qbtn));
+  document.querySelectorAll('[data-qin]').forEach(i=>i.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();answerQ(i.dataset.qin)}});
+  document.querySelectorAll('[data-dld]').forEach(b=>b.onclick=()=>dlDone(b.dataset.dld,b.dataset.dli));
+  document.querySelectorAll('.rl').forEach(el=>el.onclick=()=>openRec(el.dataset.col,el.dataset.file));
+  // kanban dnd — cross-column drop = status change; same-column = reorder to end
+  document.querySelectorAll('.kcol').forEach(col=>{
+    col.ondragover=e=>{e.preventDefault();col.classList.add('over')};
+    col.ondragleave=()=>col.classList.remove('over');
+    col.ondrop=async e=>{e.preventDefault();col.classList.remove('over');
+      const f=e.dataTransfer.getData('f');if(!f)return;
+      if(dragSrc&&dragSrc.kst===col.dataset.kst){reorder('pipeline',f,null);return}
+      await post('/api/status',{col:'pipeline',file:f,status:col.dataset.kst});
+      await load();
+      const moved=document.querySelector(`[data-kf="${CSS.escape(f)}"]`);moved&&moved.classList.add('flash');};
+  });
+  sortable();
+  const u=$('updText');
+  if(u)u.onkeydown=e=>{if((e.metaKey||e.ctrlKey)&&e.key==='Enter')postUpd(e)};
+}
+
+/* ---------- drag reordering ----------
+   Every [data-drag] element is draggable within its key group; dropping on a
+   peer inserts before it. Order persists to dashboard/order.json — a rendered
+   subset (e.g. one area's projects) is merged back into the full collection
+   order so other subsets keep their positions. */
+let dragSrc=null;
+function sortable(){
+  document.querySelectorAll('[data-drag]').forEach(el=>{
+    el.draggable=true;
+    el.addEventListener('dragstart',e=>{
+      if(e.target.closest&&e.target.closest('input,textarea,button')){e.preventDefault();return}
+      dragSrc={key:el.dataset.drag,id:el.dataset.dragid,kst:el.dataset.kst??null};
+      el.classList.add('dragging');
+      e.dataTransfer.setData('f',el.dataset.dragid);e.dataTransfer.effectAllowed='move';
+    });
+    el.addEventListener('dragend',()=>{el.classList.remove('dragging');clearDrops();dragSrc=null});
+    el.addEventListener('dragover',e=>{
+      if(!dragSrc||dragSrc.key!==el.dataset.drag)return;
+      if(el.dataset.kst!==undefined&&dragSrc.kst!==el.dataset.kst)return;  // cross-column → status drop
+      e.preventDefault();e.stopPropagation();
+      clearDrops();if(dragSrc.id!==el.dataset.dragid)el.classList.add('dropbefore');
+    });
+    el.addEventListener('drop',e=>{
+      if(!dragSrc||dragSrc.key!==el.dataset.drag)return;
+      if(el.dataset.kst!==undefined&&dragSrc.kst!==el.dataset.kst)return;
+      e.preventDefault();e.stopPropagation();
+      reorder(el.dataset.drag,dragSrc.id,el.dataset.dragid);
+    });
+  });
+}
+function clearDrops(){document.querySelectorAll('.dropbefore').forEach(x=>x.classList.remove('dropbefore'))}
+async function reorder(key,src,before){
+  if(src===before)return;
+  const domIds=[...document.querySelectorAll(`[data-drag="${CSS.escape(key)}"]`)].map(x=>x.dataset.dragid);
+  domIds.splice(domIds.indexOf(src),1);
+  if(before==null)domIds.push(src);else domIds.splice(domIds.indexOf(before),0,src);
+  let ids=domIds;
+  if(S.collections[key]){          // merge the visible subset into the full order
+    const inSub=new Set(domIds);let k=0;
+    ids=S.collections[key].map(r=>r.file).map(f=>inSub.has(f)?domIds[k++]:f);
+  }
+  await post('/api/reorder',{key,ids});load();
+}
+
+/* ---------- tell the OS ---------- */
+async function postUpd(e){
+  e.preventDefault();
+  const t=$('updText').value.trim();if(!t)return false;
+  const r=await post('/api/update',{text:t});
+  if(r.ok){$('updText').value='';toast('posted — the OS is folding it in');load()}
+  else toast('post failed');
+  return false;
+}
+function needAct(i){
+  const n=S.needs[i];if(!n)return;
+  if(n.kind==='outbox')return openRec('outbox',n.target);
+  if(n.kind==='projects')return openRec('projects',n.target);
+  if(n.kind==='deadline'){
+    if(n.src&&n.src!=='uni'&&n.src.includes('/')){const[c,...f]=n.src.split('/');return openRec(c,f.join('/'))}
+    const[date,...r]=n.target.split('|'),item=r.join('|');
+    if(confirm(`Mark done: ${item}?`))post('/api/deadline',{date,item,status:'done'}).then(load);
+  }
+}
+async function obxAct(file,st){
+  if(st==='discarded'&&!confirm('Discard this draft?'))return;
+  await post('/api/status',{col:'outbox',file,status:st});
+  toast(st==='approved'?'approved — send it, then mark sent':st==='sent'?'recorded as sent':st==='discarded'?'discarded':'reopened');
+  load();
+}
+async function propAct(i,dec){
+  const p=proposals()[i];if(!p)return;
+  await post('/api/log',{type:'decided',line:`proposal ${dec}: ${p.title}`});
+  localStorage.setItem(propKey(i),dec);
+  toast(`proposal ${dec}`);load();
+}
+async function answerQ(id){
+  const inp=document.querySelector(`[data-qin="${CSS.escape(id)}"]`);
+  if(!inp||!inp.value.trim())return;
+  const r=await post('/api/answer',{id,answer:inp.value.trim()});
+  toast(r.ok?'answered — the OS will pick it up':'could not record answer');
+  load();
+}
+function dlToggle(){const f=$('dlform');f&&f.classList.toggle('open')}
+async function dlAdd(e){
+  e.preventDefault();
+  const r=await post('/api/deadline_add',{date:$('dlDate').value,domain:$('dlDom').value,item:$('dlItem').value.trim()});
+  toast(r.ok?'deadline added':'failed to add');load();
+  return false;
+}
+async function dlDone(date,item){
+  if(!confirm(`Mark done: ${item}?`))return;
+  await post('/api/deadline',{date,item,status:'done'});load();
+}
+
+/* ---------- drawer ---------- */
+function openRec(col,file){
+  const r=(S.collections[col]||[]).find(x=>x.file===file);if(!r)return;
+  cur={col,rec:r};
+  const m=r.meta,typ=S.types[col];
+  $('dTitle').textContent=m.title;
+  $('dMeta').textContent=`${col}/${r.file} · P${m.priority||'2'}${m.cpt?' · cpt '+m.cpt:''}${m.area?' · '+m.area:''}${m.due?' · due '+m.due:''} · upd ${m.updated||'?'}`;
+  $('dSeg').innerHTML=S.enums[typ].map(s=>
+    `<button class="${s===m.status?'cur':''}" data-set="${s}">${s}</button>`).join('');
+  $('dSeg').querySelectorAll('[data-set]').forEach(b=>b.onclick=()=>setStatus(b.dataset.set));
+  $('dOps').innerHTML='';
+  $('dBody').innerHTML=md(r.body);
+  $('dBody').querySelectorAll('.rl').forEach(el=>el.onclick=()=>openRec(el.dataset.col,el.dataset.file));
+  $('dNote').value='';
+  drawer.showModal();
+}
+async function setStatus(s){
+  if(!cur||s===cur.rec.meta.status)return;
+  if(['killed','closed','discarded'].includes(s)&&!confirm(`Really → ${s}?`))return;
+  await post('/api/status',{col:cur.col,file:cur.rec.file,status:s});
+  const{col,rec}=cur;drawer.close();await load();openRec(col,rec.file);
+}
+async function addNote(){
+  if(!cur||!$('dNote').value.trim())return;
+  await post('/api/note',{col:cur.col,file:cur.rec.file,line:$('dNote').value.trim()});
+  toast('logged — folding into the record');
+  const{col,rec}=cur;drawer.close();await load();openRec(col,rec.file);
+}
+drawer.addEventListener('click',e=>{if(e.target===drawer)drawer.close()});
+drawer.addEventListener('close',()=>{cur=null;render()});
+
+/* ---------- composer ---------- */
+function openComposer(){
+  const aSel=$('cArea');
+  aSel.innerHTML=`<option value="">— none —</option>`+areas().map(a=>`<option value="${esc(a.id)}">${esc(a.label)}</option>`).join('');
+  if(tab!=='today'){
+    aSel.value=tab;
+    const defCol={career:'pipeline',academics:'courses',business:'ventures'}[tab]||'projects';
+    $('cCol').value=defCol;
+  }else{$('cCol').value='projects'}
+  compMode('rec');
+  composer.showModal();
+}
+function compMode(m){
+  $('ctRec').classList.toggle('on',m==='rec');$('ctArea').classList.toggle('on',m==='area');
+  $('cfRec').style.display=m==='rec'?'grid':'none';
+  $('cfArea').style.display=m==='area'?'grid':'none';
+}
+async function createRec(e){
+  e.preventDefault();
+  const r=await post('/api/create',{col:$('cCol').value,title:$('cTitle').value.trim(),
+    area:$('cArea').value,priority:$('cPri').value,due:$('cDue').value,body:$('cBody').value});
+  if(r.ok){composer.close();toast('created '+(r.file||''));
+    ['cTitle','cDue','cBody'].forEach(i=>$(i).value='');await load();}
+  else toast('create failed — is the backend updated?');
+  return false;
+}
+async function createArea(e){
+  e.preventDefault();
+  const label=$('aLabel').value.trim();
+  const id=label.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  if(!id)return false;
+  const r=await post('/api/area',{id,label});
+  if(r.ok){composer.close();$('aLabel').value='';toast('area added');tab=id;location.hash=id;await load();}
+  else toast('add failed — id taken?');
+  return false;
+}
+composer.addEventListener('click',e=>{if(e.target===composer)composer.close()});
+composer.addEventListener('close',()=>render());
+
+/* ---------- search ---------- */
+let qt;
+$('q').addEventListener('input',e=>{
+  clearTimeout(qt);
+  qt=setTimeout(async()=>{
+    const q=e.target.value.trim(),res=$('results');
+    if(!q){res.style.display='none';res.innerHTML='';return}
+    const hits=await api('/api/search?q='+encodeURIComponent(q));
+    res.style.display='block';
+    res.innerHTML=hits.length?hits.map(h=>{
+      const rl=recLink(h.path);
+      return `<div class="hit" ${rl?`data-hcol="${esc(rl.col)}" data-hfile="${esc(rl.file)}"`:''}>
+        <div class="path">${esc(h.path)} § ${esc(h.section)}</div><div class="snip">${h.snippet}</div></div>`;
+    }).join(''):'<div class="none">no hits</div>';
+    res.querySelectorAll('[data-hcol]').forEach(el=>el.onclick=()=>{res.style.display='none';openRec(el.dataset.hcol,el.dataset.hfile)});
+  },250);
+});
+document.addEventListener('click',e=>{if(!e.target.closest('.hright'))$('results').style.display='none'});
+document.addEventListener('keydown',e=>{
+  if(e.key==='/'&&!e.target.closest('input,textarea,select')){e.preventDefault();$('q').focus()}
+  if(e.key==='Escape'){$('results').style.display='none';$('q').blur()}
+});
+
+/* ---------- misc ---------- */
+let toastT;
+function toast(msg){
+  const t=$('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2600);
+}
+function tick(){
+  const d=new Date();
+  const s=d.toLocaleDateString('en-US',{weekday:'short',day:'numeric',month:'short'}).toUpperCase()
+    +' · '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  $('clock').textContent=s;
+}
+tick();setInterval(tick,30000);
+window.addEventListener('hashchange',()=>{const t=(location.hash||'#today').slice(1);if(t!==tab){tab=t;render()}});
+load();
+setInterval(()=>{if(!document.hidden)load()},30000);
+</script>
+</body>
+</html>

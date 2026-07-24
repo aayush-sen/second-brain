@@ -1,0 +1,36 @@
+{
+  "areas": [
+    {
+      "id": "career",
+      "label": "Career",
+      "collections": [
+        "pipeline",
+        "outreach"
+      ]
+    },
+    {
+      "id": "research",
+      "label": "Research",
+      "collections": []
+    },
+    {
+      "id": "academics",
+      "label": "Academics",
+      "collections": [
+        "courses"
+      ]
+    },
+    {
+      "id": "business",
+      "label": "Business",
+      "collections": [
+        "ventures"
+      ]
+    },
+    {
+      "id": "startup",
+      "label": "Startup",
+      "collections": []
+    }
+  ]
+}

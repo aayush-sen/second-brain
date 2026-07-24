@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-10T15:08:59Z",
+  "title": "Design System: Agentic OS Dashboard",
+  "extensions": {
+    "colorMeta": {
+      "bg-void": { "role": "neutral", "displayName": "Void", "canonical": "#0b0e14", "tonalRamp": ["#1b2331", "#2d3a52", "#3f5173", "#516894", "#6b81ae", "#8c9dc0", "#bdc7db", "#eff1f6"] },
+      "panel": { "role": "neutral", "displayName": "Panel", "canonical": "#131722", "tonalRamp": ["#1b2131", "#2e3752", "#404d73", "#526493", "#6c7dad", "#8c9abf", "#bec5da", "#eff1f6"] },
+      "panel-raised": { "role": "neutral", "displayName": "Panel Raised", "canonical": "#1a1f2e", "tonalRamp": ["#1c2131", "#2e3751", "#404d72", "#536393", "#6c7cac", "#8d99bf", "#bec5da", "#eff0f6"] },
+      "line": { "role": "neutral", "displayName": "Line", "canonical": "#232a3d", "tonalRamp": ["#1c2131", "#2e3851", "#414e71", "#546492", "#6d7eab", "#8e9bbe", "#bec6da", "#eff1f6"] },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#dbe2f0", "tonalRamp": ["#162136", "#25375a", "#344d7e", "#4363a2", "#5d7cbc", "#8199cb", "#b7c5e1", "#edf0f8"] },
+      "ink-dim": { "role": "neutral", "displayName": "Ink Dim", "canonical": "#8b93a7", "tonalRamp": ["#21242b", "#373c48", "#4d5466", "#636c82", "#7d869c", "#9aa0b2", "#c5c9d3", "#f0f2f4"] },
+      "accent": { "role": "primary", "displayName": "Signal Blue", "canonical": "#6ea8fe", "tonalRamp": ["#011f4c", "#01347f", "#0148b1", "#025de4", "#1b76fd", "#4e95fe", "#9ac2fe", "#e6f0ff"] },
+      "gold": { "role": "secondary", "displayName": "Muted Gold", "canonical": "#e8c268", "tonalRamp": ["#42320a", "#6f5311", "#9b7418", "#c7951e", "#e1af38", "#e7c064", "#f2dba6", "#fcf6e9"] },
+      "red": { "role": "secondary", "displayName": "Dusk Red", "canonical": "#e0687a", "tonalRamp": ["#3f0d15", "#6a1622", "#941e30", "#be273e", "#d84157", "#e16b7d", "#eeaab4", "#fbeaec"] },
+      "green": { "role": "secondary", "displayName": "Sage Green", "canonical": "#69c98f", "tonalRamp": ["#143823", "#225e3a", "#2f8351", "#3da968", "#56c281", "#7cd09d", "#b4e4c7", "#ecf8f1"] },
+      "violet": { "role": "secondary", "displayName": "Soft Violet", "canonical": "#b08ae8", "tonalRamp": ["#210d40", "#38156b", "#4e1d95", "#6426c0", "#7d3fd9", "#9a6ae2", "#c5aaee", "#f1eafb"] },
+      "orange": { "role": "tertiary", "displayName": "Warm Orange (reserved, unused)", "canonical": "#e8975f", "tonalRamp": ["#43210a", "#6f3710", "#9c4d16", "#c9631d", "#e27d36", "#e99a63", "#f2c5a6", "#fcf1e9"] }
+    },
+    "typographyMeta": {
+      "title": { "displayName": "Title", "purpose": "The single header wordmark. Only bold text in the system." },
+      "body": { "displayName": "Body", "purpose": "Default page text and the base scale everything else derives from." },
+      "meta": { "displayName": "Meta", "purpose": "Workhorse size for card sub-lines, rec meta, deadline rows, feed, search results." },
+      "label": { "displayName": "Label", "purpose": "Uppercase tracked section/column headers." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "flash-update", "value": "flash 1.5s (background var(--panel) -> #2a3550 -> var(--panel))", "purpose": "Briefly highlights a kanban card after a status change without being jarring." }
+    ],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Default Button",
+      "kind": "button",
+      "refersTo": "button-default",
+      "description": "Standalone action button (deadline check-off, modal note submit).",
+      "html": "<button class=\"ds-btn\">log</button>",
+      "css": ".ds-btn { background: var(--panel); border: 1px solid var(--line); color: var(--tx); border-radius: 6px; padding: 3px 10px; font-size: 11px; cursor: pointer; transition: border-color 0.15s; } .ds-btn:hover { border-color: var(--acc); } .ds-btn:focus-visible { outline: none; border-color: var(--acc); }"
+    },
+    {
+      "name": "Search Input",
+      "kind": "input",
+      "refersTo": "input-search",
+      "description": "Global FTS5 search field in the header.",
+      "html": "<input class=\"ds-input\" placeholder=\"search the OS… (FTS5)\">",
+      "css": ".ds-input { background: var(--panel); border: 1px solid var(--line); color: var(--tx); border-radius: 8px; padding: 7px 12px; width: 320px; outline: none; transition: border-color 0.15s; } .ds-input:focus { border-color: var(--acc); } .ds-input::placeholder { color: var(--dim); }"
+    },
+    {
+      "name": "Kanban Card",
+      "kind": "card",
+      "refersTo": "card-kanban",
+      "description": "Pipeline card inside a kanban column; left border signals priority.",
+      "html": "<div class=\"ds-card\">Anthropic — Forward Deployed Engineer<div class=\"ds-card-sub\">P1 · cpt:check · due 2026-08-01</div></div>",
+      "css": ".ds-card { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--acc); border-radius: 7px; padding: 7px 8px; font-size: 11.5px; color: var(--tx); cursor: pointer; } .ds-card.p1 { border-left-color: var(--gold); } .ds-card-sub { color: var(--dim); font-size: 10px; margin-top: 2px; } .ds-card:hover { border-color: var(--acc); }"
+    },
+    {
+      "name": "Status Pill",
+      "kind": "chip",
+      "refersTo": "status-pill",
+      "description": "Category/status marker floated inside a rec row (ventures, projects, outreach).",
+      "html": "<span class=\"ds-pill\">active</span>",
+      "css": ".ds-pill { padding: 1px 8px; border-radius: 9px; background: var(--panel); border: 1px solid var(--line); font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--vio); }"
+    },
+    {
+      "name": "Panel Surface",
+      "kind": "card",
+      "refersTo": "panel-surface",
+      "description": "Top-level container used for every major dashboard section.",
+      "html": "<section class=\"ds-panel\"><h2 class=\"ds-panel-label\">Deadlines</h2><div>…</div></section>",
+      "css": ".ds-panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; } .ds-panel-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--dim); margin-bottom: 10px; font-weight: 400; }"
+    },
+    {
+      "name": "Rec Row",
+      "kind": "card",
+      "refersTo": "rec-row",
+      "description": "Ventures/Projects/Outreach list item; nested one step up the tonal stack from its parent panel.",
+      "html": "<div class=\"ds-rec\"><span class=\"ds-pill\">active</span><b>Project Name</b><div class=\"ds-rec-meta\">What it is: short description</div></div>",
+      "css": ".ds-rec { background: var(--panel2); border: 1px solid var(--line); border-left: 3px solid var(--vio); border-radius: 8px; padding: 9px 10px; margin-bottom: 8px; font-size: 12.5px; color: var(--tx); cursor: pointer; } .ds-rec:hover { border-color: var(--acc); } .ds-rec-meta { color: var(--dim); font-size: 11.5px; margin-top: 3px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Situation Room, Quietly Lit",
+    "overview": "This is an operator's console, not a showroom. Aayush is the only regular viewer, opening it several times a day for a running mental model of where his career pipeline, ventures, projects, outreach, and deadlines stand — and occasionally screen-sharing it, so it has to hold up to a second pair of eyes without needing the density stripped out first. The system is low-lit and unhurried: dark tonal surfaces, one cool accent, a small set of status hues used sparingly, no chrome for its own sake.\n\nThe current implementation leans dense and terminal-like — tight paddings, near-uniform micro-typography, color-coded left borders doing most of the hierarchy work. The direction is to move it toward calm, spacious, considered: fewer competing signals, more breathing room, typography (not colored stripes) carrying the weight of hierarchy. This system explicitly rejects the generic SaaS admin-template look, decorative flourish for its own sake, and cramped layouts that trade breathing room for raw information density.",
+    "keyCharacteristics": [
+      "Three-step tonal surface stack (bg-void → panel → panel-raised) creates depth; no shadows anywhere.",
+      "One cool accent (accent) for interaction and focus; four status hues (gold, red, green, violet) each carry one specific meaning, never decorative.",
+      "A single sans-serif family at many sizes rather than a distinct display/body pairing — utilitarian, not editorial.",
+      "Left-border color coding is the dominant hierarchy device today; the system is moving away from leaning on it as the only signal."
+    ],
+    "rules": [
+      { "name": "The One Meaning Rule", "body": "Every status hue (gold, red, green, violet) maps to exactly one semantic meaning across the whole app. Never reuse a status color for a different signal just because it's visually convenient in a new spot.", "section": "colors" },
+      { "name": "The No Second Bold Rule", "body": "Weight 700 is reserved for the page title alone. Emphasis elsewhere comes from color or a lighter medium weight (500), never from a second bold size.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Surfaces are distinguished by background lightness and a hairline border, never by shadow. If a new component needs to feel above the page, move it one step up the tonal stack before reaching for a shadow.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep every status hue (gold, red, green, violet) mapped to exactly one meaning app-wide.",
+      "Do build new surfaces from the three-step tonal stack before reaching for a shadow.",
+      "Do reserve 700 weight for the page title only; use color, size, or 500-weight for everything else.",
+      "Do favor more padding and fewer simultaneous signals per component as the system moves toward calm and spacious, even where it costs some density.",
+      "Do keep new components legible to a second, screen-sharing viewer — not just skimmable by the builder mid-triage."
+    ],
+    "donts": [
+      "Don't ship a generic SaaS admin-template look — no default card-grid dashboard kit aesthetic.",
+      "Don't add decorative flourishes for their own sake — no glassmorphism, no gradient accents, nothing ornamental that isn't carrying information.",
+      "Don't default to cramped, terminal-dense layouts that trade breathing room for raw information density.",
+      "Don't introduce orange decoratively — it's a reserved fifth status hue with no assigned meaning yet.",
+      "Don't lean on colored left-borders as the only hierarchy signal on a new component; pair or replace with typographic weight/size once the type scale is revisited."
+    ]
+  }
+}

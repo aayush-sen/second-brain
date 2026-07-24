@@ -1,0 +1,21 @@
+# Obsidian per-session view state churns constantly; not worth versioning
+.obsidian/workspace.json
+.obsidian/graph.json
+.DS_Store
+__pycache__/
+
+# Derived caches — regenerable (OS.md rule 6), never versioned
+os/memory/cache/
+
+# Impeccable live-session state at the vault root (dashboard copy has its own .gitignore)
+/.impeccable/
+
+# Sensitive/heavy raw dumps — on disk as sources, deliberately untracked (too large + sensitive for git history)
+raw/imessage/
+raw/contacts/
+raw/main personal google data/
+raw/ucsd google data/
+raw/iphone-backup/
+raw/iphone-extracted/
+raw/instagram/
+raw/spotify/
