@@ -5,6 +5,8 @@ This vault is Aayush's second brain: a persistent, LLM-maintained wiki covering 
 > [!important] The Agentic OS lives at `os/` — read `os/OS.md` for its rules (added 2026-07-09, approved plan).
 > `os/` is the *action* system (career, ventures, university, memory, dashboard). It is self-sufficient: OS workflows read only `os/`, never this wiki. Wiki→os ports happen only via the librarian's allowlist (career/academic material; personal-life content never enters `os/`). Skills in `.claude/skills/`, agents in `.claude/agents/`, dashboard via `python3 os/dashboard/serve.py` → localhost:8877. OS commits use the `os:` prefix. The wiki's own rules below are unchanged.
 
+> [!important] **Writing style is non-optional.** Before producing ANY prose Aayush will put his name on (essay, discussion post, peer reply, cover letter, cold email, application statement, reflection, or a revision of any of these), read `os/knowledge/voice.md` in full and write to it. It is the style and tone guide built from his AWP and MMW corpus, rebuilt 2026-07-31 from the Drive documents. This applies whether or not a skill or agent was invoked, and whether the output lands in `wiki/`, `os/`, or a one-off reply in chat. The hard rules in §5 and the anti-patterns in §9 are pass/fail: a draft violating one gets rewritten, not shipped with a caveat. The em dash ban applies to everything he hands in or sends (coursework, emails, applications); internal `os/` and `wiki/` notes are exempt.
+
 ## Architecture
 
 ```

@@ -7,6 +7,17 @@ __pycache__/
 # Derived caches — regenerable (OS.md rule 6), never versioned
 os/memory/cache/
 
+# Phone dashboard — secrets and local state, never versioned
+os/integrations/phone.env
+os/integrations/phone_sync.log
+os/integrations/phone_sync.err
+os/phone/.vercel/
+os/phone/.env.local
+os/integrations/cloud_sync_base
+os/integrations/cloud_sync.lock/
+os/integrations/cloud_sync.log
+os/integrations/cloud_sync.err
+
 # Impeccable live-session state at the vault root (dashboard copy has its own .gitignore)
 /.impeccable/
 
@@ -19,3 +30,8 @@ raw/iphone-backup/
 raw/iphone-extracted/
 raw/instagram/
 raw/spotify/
+# Private Canvas mirror and immutable course sources — local device only
+os/uni/private/
+# Claude-drafted submission work product — local device only, never mirrored
+os/uni/submissions/
+.impeccable/

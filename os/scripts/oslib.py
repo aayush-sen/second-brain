@@ -4,6 +4,7 @@ Every domain uses the same YAML-frontmatter markdown file; the dashboard, cache
 builder, and any script import THIS instead of re-parsing. Stdlib only."""
 import json
 import re
+import sqlite3
 import sys
 from collections import Counter
 from datetime import date, datetime
@@ -220,6 +221,23 @@ def add_area(aid: str, label: str) -> bool:
     return True
 
 
+def set_area_hidden(aid: str, hidden: bool) -> bool:
+    """Hide/show a dashboard area; the flag lives in areas.json so it
+    survives refreshes and restarts. Records are untouched."""
+    cur = areas()
+    for area in cur:
+        if area["id"] == aid:
+            if hidden:
+                area["hidden"] = True
+            else:
+                area.pop("hidden", None)
+            (OS / "dashboard" / "areas.json").write_text(
+                json.dumps({"areas": cur}, indent=2) + "\n"
+            )
+            return True
+    return False
+
+
 QUESTION_RE = re.compile(r"- \[(?:answered (\d{4}-\d{2}-\d{2})|open)\] (\d{4}-\d{2}-\d{2}) \| ([\w-]+) \| (.+)$")
 
 
@@ -260,6 +278,45 @@ def answer_question(qid: str, answer: str) -> bool:
 DEADLINE_RE = re.compile(r"- (\d{4}-\d{2}-\d{2}) \| (\S+) \| (.+?) \| ([\w-]+)\s*$")
 
 
+def _deadline_tokens(value: str) -> tuple:
+    return tuple(re.findall(r"[a-z0-9]+", value.lower()))
+
+
+def _merge_canvas_deadlines(items: list) -> list:
+    """Add the private Canvas view when present, collapsing display duplicates."""
+    try:
+        import canvas_store
+        if not canvas_store.DB_PATH.exists():
+            return items
+        con = canvas_store.open_db(canvas_store.DB_PATH)
+        try:
+            canvas_items = canvas_store.canvas_deadlines(con)
+        finally:
+            con.close()
+    except (OSError, ValueError, ImportError, sqlite3.Error):
+        return items
+
+    def duplicate(manual, canvas):
+        return (
+            manual["status"] != "done"
+            and manual["date"] == canvas["date"]
+            and _deadline_tokens(manual["item"]) == _deadline_tokens(canvas["item"])
+            and _deadline_tokens(manual["domain"]) == _deadline_tokens(canvas["course"])
+        )
+
+    # OS consumers (health, needs, due, reflect, Today) speak open|in-progress|
+    # done; a submitted/excused Canvas row is "done" in that vocabulary. The
+    # Academics view reads the richer flags (complete/missing/graded) directly.
+    for canvas in canvas_items:
+        if canvas.get("complete"):
+            canvas["status"] = "done"
+
+    return [
+        item for item in items
+        if not any(duplicate(item, canvas) for canvas in canvas_items)
+    ] + canvas_items
+
+
 def deadlines(cols=None) -> list:
     """uni/deadlines.md table merged with every live record's due: date.
     Pass an already-parsed {name: records(name)} to avoid re-reading."""
@@ -284,6 +341,7 @@ def deadlines(cols=None) -> list:
                     continue
                 items.append({"date": due, "domain": name, "item": r["meta"]["title"],
                               "status": st, "days": days, "src": f"{name}/{r['file']}"})
+    items = _merge_canvas_deadlines(items)
     return sorted(items, key=lambda x: x["date"])
 
 
@@ -319,6 +377,77 @@ def add_deadline(date0: str, domain: str, item: str) -> bool:
         return False
     episodic("filed", f"deadline {date0} {domain} {item}")
     return True
+
+
+PREP_RE = re.compile(r"- (\d{4}-\d{2}-\d{2}) \| (.+?) \| (.+?) \| (open|done)\s*$")
+PREP_DAY_RE = re.compile(r"- (\d{4}-\d{2}-\d{2})(?: \| (\d+)m)?\s*$")  # date [| minutes]
+
+
+def prep_plan() -> dict:
+    """career/prep/plan.md — the weekly-block table plus the ## Daily check-in
+    lines (`- YYYY-MM-DD | 45m`, written by the dashboard's slider+button).
+    days maps date → minutes."""
+    f = OS / "career" / "prep" / "plan.md"
+    if not f.exists():
+        return {"weeks": [], "days": {}}
+    weeks, day_mins = [], {}
+    for l in f.read_text().splitlines():
+        m = PREP_RE.match(l)
+        if m:
+            w, block, focus, st = m.groups()
+            days = (date.fromisoformat(w) - date.today()).days
+            weeks.append({"week": w, "block": block, "focus": focus, "status": st,
+                          "current": -7 < days <= 0})
+            continue
+        m = PREP_DAY_RE.match(l)
+        if m:
+            day_mins[m.group(1)] = int(m.group(2) or 30)
+    return {"weeks": weeks, "days": day_mins}
+
+
+def log_prep_day(day: str = "", minutes: int = 30) -> bool:
+    """Record time spent on prep for today (or an ISO date). Re-logging a day
+    replaces its minutes — the slider sets the day's total."""
+    day = day if day and day != "today" else date.today().isoformat()
+    try:
+        date.fromisoformat(day)
+        minutes = max(1, min(480, int(minutes)))
+    except (ValueError, TypeError):
+        return False
+    f = OS / "career" / "prep" / "plan.md"
+    if not f.exists():
+        return False
+    line = f"- {day} | {minutes}m"
+    lines = f.read_text().rstrip("\n").splitlines()
+    for i, l in enumerate(lines):
+        m = PREP_DAY_RE.match(l)
+        if m and m.group(1) == day:
+            lines[i] = line
+            break
+    else:
+        if not any(l.startswith("## Daily") for l in lines):
+            lines += ["", "## Daily"]
+        lines.append(line)
+    f.write_text("\n".join(lines) + "\n")
+    episodic("done", f"prep day {day} — {minutes}m")
+    return True
+
+
+def set_prep(week: str, status: str) -> bool:
+    if status not in ("open", "done"):
+        return False
+    f = OS / "career" / "prep" / "plan.md"
+    if not f.exists():
+        return False
+    lines = f.read_text().splitlines()
+    for i, l in enumerate(lines):
+        m = PREP_RE.match(l)
+        if m and m.group(1) == week:
+            lines[i] = f"- {week} | {m.group(2)} | {m.group(3)} | {status}"
+            f.write_text("\n".join(lines) + "\n")
+            episodic("done" if status == "done" else "decided", f"prep week {week} ({m.group(2)}) → {status}")
+            return True
+    return False
 
 
 def latest_briefing():
@@ -474,6 +603,52 @@ def _stats_lines(s: dict) -> list:
             f"outbox:   {d['waiting']} waiting | {d['sent']} sent | {d['discarded']} discarded"]
 
 
+def _canvas_lines() -> list:
+    """Compact Canvas connection truth for the daily pre-read — never raw
+    payloads, never credentials. Empty list when no private mirror exists."""
+    try:
+        import canvas_store
+        if not canvas_store.DB_PATH.exists():
+            return []
+        con = canvas_store.open_db(canvas_store.DB_PATH)
+    except Exception:
+        return ["state: unreadable — private mirror could not be opened"]
+    try:
+        state = canvas_store.connection_state(con)
+        latest = state.get("latest_run") or {}
+        lines = [f"state: {state['state']}"]
+        attempt = latest.get("finished_at") or latest.get("started_at")
+        if attempt:
+            lines.append(f"last attempt: {attempt}")
+        if state.get("last_success"):
+            lines.append(f"last success: {state['last_success']}")
+        if state["state"] == "login_required":
+            lines.append("warning: Log into Canvas again; "
+                         "Pierce never needs your credentials.")
+        elif state["state"] == "stale":
+            lines.append("warning: no successful refresh in 36h — "
+                         "showing the last good snapshot.")
+        elif state["state"] == "failed":
+            lines.append("warning: last refresh failed — "
+                         f"{latest.get('error') or 'unknown error'}")
+        elif state["state"] == "partial":
+            lines.append("warning: last refresh was partial — "
+                         "failed courses kept their previous data.")
+        lines.append(f"changed: {latest.get('changed_count', 0)} "
+                     "facts in the last run")
+        for d in canvas_store.canvas_deadlines(con):
+            if d["missing"] or d["overdue"] or d["due_soon"]:
+                flag = ("missing" if d["missing"]
+                        else "overdue" if d["overdue"] else "due soon")
+                lines.append(f"- {flag}: {d['item']} ({d['course']}) "
+                             f"due {d['due_at']}")
+        return lines
+    except Exception:
+        return ["state: unreadable — private mirror could not be opened"]
+    finally:
+        con.close()
+
+
 def reflect_view() -> str:
     """One-shot deterministic pre-read for the daily reflection (os-reflect
     step 1): everything checkable in one output, so the agent's judgment
@@ -482,7 +657,11 @@ def reflect_view() -> str:
     dls = deadlines(cols)
     lb = latest_briefing()
     wm = lb["date"] if lb else ""
-    out = [f"WATERMARK: {wm or 'none — first run'}", "", "== HEALTH =="]
+    out = [f"WATERMARK: {wm or 'none — first run'}"]
+    canvas = _canvas_lines()
+    if canvas:  # before HEALTH so auth/staleness can't be skipped
+        out += ["", "== CANVAS =="] + canvas
+    out += ["", "== HEALTH =="]
     out += health() or ["healthy: no findings"]
     out += ["", "== NEEDS =="]
     out += [f"- {n['label']} [{n['kind']}]" for n in needs_today(cols, dls)] or ["none"]

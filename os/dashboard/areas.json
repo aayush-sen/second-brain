@@ -25,12 +25,14 @@
       "label": "Business",
       "collections": [
         "ventures"
-      ]
+      ],
+      "hidden": true
     },
     {
       "id": "startup",
       "label": "Startup",
-      "collections": []
+      "collections": [],
+      "hidden": true
     }
   ]
 }

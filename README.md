@@ -3,7 +3,7 @@
 A personal knowledge and action system built on Claude Code. One repo, two cooperating systems:
 
 1. **The wiki** — a persistent, LLM-maintained personal wiki (Obsidian-compatible). I curate sources and ask questions; the agent does all writing, filing, cross-referencing, and bookkeeping.
-2. **The Agentic OS** (`os/`) — a chief-of-staff layer that turns goals into finished work: career pipeline tracking, outreach drafting, project scoping, university deadlines, and a daily self-reflection loop — all surfaced on a local dashboard.
+2. **The Agentic OS** (`os/`) — a chief-of-staff layer that turns goals into finished work: career pipeline tracking, outreach drafting, project scoping, university deadlines, and a daily self-reflection loop — surfaced on a local dashboard, mirrored to a phone app, and kept running by cloud agents even when the laptop is off.
 
 ## How the wiki works
 
@@ -25,6 +25,27 @@ Core operations: **ingest** (a new source fans out into 10–15 page updates), *
 - **Daily reflection.** A scheduled morning run audits yesterday's claims against the records they name, proposes improvements, applies mechanical fixes, and writes a briefing the dashboard serves.
 - **A real dashboard.** `python3 os/dashboard/serve.py` → localhost:8877 — deadlines, pipeline, outreach queue, briefings, and open questions, all interactable.
 
+## Off the laptop
+
+The OS no longer needs the Mac open. Three pieces make that work, and none of them uses an API key — all agent compute runs on a Claude subscription:
+
+```
+ cloud agents (claude.ai cron) ──push──▶ private mirror repo
+        6:20am briefing                       │  ▲
+        Friday weekly review          pull ───┘  └── push   (git sync agent, 5 min)
+                                              ▼
+ phone (PWA) ◀── Vercel functions ◀── Supabase ◀── Mac: the vault + sync agents
+     │                                 snapshot
+     └── actions / notes / asks ──▶ queue ──▶ applied locally through the same
+                                              code paths the desktop uses
+```
+
+- **Phone app.** A single-file mobile twin of the dashboard (same design system, Mondwest + Courier Prime on the dashboard teal), deployed on Vercel: Today (briefing + near deadlines), Todo, Notes with voice dictation, and Ask. A sync agent on the Mac pushes a redacted state snapshot to Supabase every two minutes; phone actions queue in Supabase and the same agent applies them via the exact oslib functions the desktop dashboard calls. Supabase runs RLS deny-all — the only way in is a bearer token, checked constant-time.
+- **Cloud routines.** The morning briefing and Friday weekly review run as scheduled claude.ai cloud agents against a private mirror of `os/`. A pull-then-push git sync agent reconciles cloud commits with the vault every five minutes, so a briefing written in the cloud at 6:20am is on the phone before the laptop wakes up.
+- **Ask pipeline.** Questions typed (or dictated) on the phone queue in Supabase; the Mac picks them up and answers with a headless `claude -p` run over the full vault, usually within a couple of minutes.
+
+The wiki stays local by design — only the OS layer is mirrored, and the mirror carries no personal-life content.
+
 ## Repo layout (public subset)
 
 ```
@@ -37,7 +58,10 @@ Core operations: **ingest** (a new source fans out into 10–15 page updates), *
 └── os/
     ├── OS.md              # the OS rulebook — ground rules, routing, memory design
     ├── dashboard/         # local dashboard (stdlib http.server + single-page app)
-    └── scripts/           # oslib.py (CLI views), cache builder, daily insights
+    ├── phone/             # mobile twin — static PWA + Vercel functions (no framework)
+    └── scripts/           # oslib.py (CLI views), cache builder, daily insights,
+                           # phone_sync.py (snapshot/actions/asks), cloud_sync.sh
+                           # (two-way mirror to the private cloud repo)
 ```
 
 ## Why

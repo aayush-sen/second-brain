@@ -21,7 +21,9 @@ Design notes learned the hard way:
 
 Degrades loudly: any missing dependency prints one PULSE-UNAVAILABLE line and
 exits 1 so the skill can fall back to plain WebSearch instead of failing."""
+import datetime
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -112,8 +114,70 @@ def engine_argv(py, engine, plan_file, tmp) -> list:
             "--plan", str(plan_file), f"--x-related={AI_VOICES}", f"--save-dir={tmp}"]
 
 
+def pull_voices(engine: Path) -> str:
+    """FROM-lane pull for AI_VOICES, run BEFORE the engine's topic search.
+
+    The engine's own handle lane (Phase 2) runs after 6 parallel X subqueries;
+    one 429 marks X rate-limited and the lane is silently skipped — which is
+    why briefings kept reporting 'quiet day for the named voices' on days they
+    posted (diagnosed 2026-07-28). Going first, one cheap query per handle,
+    sidesteps that. bird authenticates with Aayush's own Arc X session cookies
+    (the tool's designed browser-cookie mode); creds never leave the machine.
+    Degrades to an empty string, never fails the run."""
+    try:
+        sys.path.insert(0, str(engine.parent))
+        from lib import env as l30_env, bird_x
+        cfg = l30_env.get_config(l30_env.ConfigLoadPolicy(browser_cookies="read"))
+        if not (cfg.get("AUTH_TOKEN") and cfg.get("CT0") and bird_x.is_bird_installed()):
+            return "\n## AI voices (last 24h)\nVOICES-UNAVAILABLE: bird/X cookies not available.\n"
+        bird_x.set_credentials(cfg["AUTH_TOKEN"], cfg["CT0"])
+        since = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
+        items = bird_x.search_handles(
+            [h for h in AI_VOICES.split(",")], None, since, count_per=5)
+        if not items:
+            return "\n## AI voices (last 24h)\n(none of the named voices posted)\n"
+        lines = ["\n## AI voices (last 24h)",
+                 "Actual posts BY the named voices, pulled directly — trust this over",
+                 "the ranked clusters when judging whether they were quiet.\n"]
+        for it in items:
+            text = " ".join((it.get("text") or "").split())
+            if len(text) > 300:
+                text = text[:300] + "…"
+            likes = (it.get("engagement") or {}).get("likes") or 0
+            lines.append(f"- @{it.get('author_handle','?')} ({it.get('date') or '?'}) "
+                         f"[{likes} likes] {text}")
+            if it.get("url"):
+                lines.append(f"  {it['url']}")
+        return "\n".join(lines) + "\n"
+    except Exception as e:
+        return f"\n## AI voices (last 24h)\nVOICES-UNAVAILABLE: {e}\n"
+
+
+MAX_CLUSTERS = 30
+
+
+def pick_clusters(stdout: str, tmp: Path, limit: int = MAX_CLUSTERS) -> str:
+    """Prefer the engine's saved raw file over `--emit=compact` stdout.
+
+    Diagnosed 2026-08-03: retrieval is NOT single-source (a typical run pulls
+    HN, GitHub and Reddit alongside X), but compact stdout keeps only the top
+    ~7 clusters and X's engagement scores sweep those — so every briefing read
+    as X-only noise. The raw file `--save-dir` already writes holds every
+    cluster; take the first `limit` of them instead."""
+    raw = next(iter(sorted(tmp.glob("*-raw.md"))), None)
+    if raw is None:
+        return stdout
+    try:
+        text = raw.read_text()
+    except OSError:
+        return stdout
+    parts = re.split(r"(?m)^(?=### \d+\. )", text)
+    return "".join(parts[:limit + 1]) if len(parts) > limit + 1 else text
+
+
 def main():
     engine, py = find_engine(), find_python()
+    voices = pull_voices(engine)
     tmp = Path(tempfile.mkdtemp(prefix="daily-insights-"))
     plan_file = tmp / "plan.json"
     plan_file.write_text(PLAN)
@@ -131,15 +195,27 @@ def main():
         die("engine timed out after 300s")
     if p.returncode:
         die(f"engine exited {p.returncode}: {p.stderr.strip().splitlines()[-1] if p.stderr.strip() else 'no stderr'}")
+    out = pick_clusters(p.stdout, tmp) + voices
     # persist a snapshot os-reflect can fall back to if a later run is rate-limited
     try:
         snap = Path(__file__).resolve().parent.parent / "memory" / "cache" / "daily-insights-latest.md"
         snap.parent.mkdir(parents=True, exist_ok=True)
-        snap.write_text(p.stdout)
+        snap.write_text(out)
     except OSError:
         pass
-    print(p.stdout)
+    print(out)
+
+
+def selftest():
+    """python3 daily_insights.py --selftest"""
+    d = Path(tempfile.mkdtemp())
+    body = "head\n" + "".join(f"### {i}. c{i}\nx\n" for i in range(1, 6))
+    (d / "t-raw.md").write_text(body)
+    assert pick_clusters("STDOUT", d, limit=2).count("### ") == 2
+    assert pick_clusters("STDOUT", d, limit=99) == body
+    assert pick_clusters("STDOUT", Path(tempfile.mkdtemp())) == "STDOUT"
+    print("ok")
 
 
 if __name__ == "__main__":
-    main()
+    selftest() if "--selftest" in sys.argv else main()

@@ -33,6 +33,7 @@
   --mono:'Courier Prime',ui-monospace,'SF Mono',Menlo,Consolas,monospace;
   --display:'Mondwest',Georgia,serif;
   --sh:0 1px 2px rgba(0,0,0,.5),0 10px 28px rgba(0,0,0,.42),0 28px 72px rgba(0,0,0,.38);
+  --gut:40px;           /* .wrap side padding — the board bleeds out to it */
   /* z scale: nav < overlay < dialog < toast */
   --z-overlay:10;--z-dialog:20;--z-toast:30;
 }
@@ -91,6 +92,8 @@ nav button.add:hover{color:var(--ink)}
 .sec::after{content:'';flex:1;height:1px;background:var(--line)}
 .sec .act{font:400 12px var(--mono);color:var(--ink3);letter-spacing:.04em}
 .sec .act:hover{color:var(--ink)}
+.sec .act.right{order:1;margin-left:16px}   /* past the ::after rule, to the far edge */
+.sec .act[disabled]{color:var(--ink3);opacity:.5;cursor:default}
 
 h1.display,h2.display{font:400 34px/1.15 var(--display);letter-spacing:.01em;text-wrap:balance}
 .subline{font:400 12px var(--mono);color:var(--ink3);letter-spacing:.07em;text-transform:uppercase;margin-top:8px}
@@ -99,8 +102,9 @@ h1.display,h2.display{font:400 34px/1.15 var(--display);letter-spacing:.01em;tex
 .empty{color:var(--ink3);font-size:13px;padding:4px 0}
 .empty .cmd{font-family:var(--mono);font-size:12px;color:var(--ink2)}
 
-.btn{font:400 12px var(--mono);letter-spacing:.04em;padding:5px 13px;border:1px solid var(--line2);
-  border-radius:6px;color:var(--ink2);transition:color .15s,border-color .15s}
+.btn{display:inline-block;font:400 12px var(--mono);letter-spacing:.04em;padding:5px 13px;
+  border:1px solid var(--line2);border-radius:6px;color:var(--ink2);text-decoration:none;
+  transition:color .15s,border-color .15s}
 .btn:hover{color:var(--ink);border-color:color-mix(in srgb,var(--ink) 45%,transparent)}
 .btn.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .btn.primary:hover{background:var(--ink2)}
@@ -219,20 +223,108 @@ h1.display,h2.display{font:400 34px/1.15 var(--display);letter-spacing:.01em;tex
 .feed .ty{font:400 11px var(--mono);color:var(--ink2);text-transform:uppercase;letter-spacing:.06em;min-width:58px}
 .feed .ln{color:var(--ink3);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-/* ---------------- kanban ---------------- */
-.kwrap{overflow-x:auto;padding-bottom:6px}
-.kanban{display:grid;grid-template-columns:repeat(7,minmax(158px,1fr));gap:14px;min-height:200px}
+/* ---------------- pipeline board ----------------
+   Columns scroll sideways, each column's stack scrolls on its own — the whole
+   funnel stays reachable without squeezing eight columns into one viewport. */
+.kwrap{overflow-x:auto;margin:0 calc(var(--gut) * -1);padding:2px var(--gut) 12px;
+  scrollbar-color:var(--line2) transparent}
+.kanban{display:flex;gap:16px;align-items:flex-start;width:max-content;min-width:100%}
+.kcol{flex:0 0 264px;display:flex;flex-direction:column;min-width:0}
 .kcol h3{font:400 11px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);
-  padding:0 2px 9px;border-bottom:1px solid var(--line);margin-bottom:11px;display:flex;justify-content:space-between}
+  padding:0 2px 10px;border-bottom:1px solid var(--line);margin-bottom:12px;
+  display:flex;justify-content:space-between;gap:10px;transition:color .15s,border-color .15s}
 .kcol.over h3{color:var(--ink);border-bottom-color:var(--ink)}
-.kcard{background:var(--card);border-radius:8px;padding:11px 13px;margin-bottom:9px;cursor:pointer;transition:background .15s}
+.kbody{display:flex;flex-direction:column;gap:10px;min-height:104px;overflow-y:auto;
+  max-height:min(56vh,520px);padding-bottom:2px;scrollbar-color:var(--line2) transparent}
+.kcard{background:var(--card);border-radius:8px;padding:12px 13px;cursor:pointer;transition:background .15s}
 .kcard:hover{background:var(--card2)}
 .kcard .t{font-size:13.5px;font-weight:500;line-height:1.35}
-.kcard .m{font:400 10.5px var(--mono);color:var(--ink3);letter-spacing:.05em;margin-top:6px;text-transform:uppercase}
+.kcard .role{font-size:12.5px;color:var(--ink3);line-height:1.35;margin-top:3px}
+.kcard .m{font:400 10.5px var(--mono);color:var(--ink3);letter-spacing:.05em;margin-top:9px;text-transform:uppercase}
 .kcard .m .p1{color:var(--amber)}
 .kcard.flash{animation:flash 1.4s}
 @keyframes flash{0%,45%{background:var(--wash)}100%{background:var(--card)}}
-.karchive{margin-top:6px}
+.kempty{font-size:12.5px;color:color-mix(in srgb,var(--ink) 34%,var(--bg));padding:4px 2px}
+.karchive{margin-top:14px}
+
+/* ---------------- jobs feed ---------------- */
+.jbar{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin:0 0 4px}
+#jq{background:transparent;border:none;border-bottom:1px solid var(--line);border-radius:0;
+  font:400 13px var(--mono);padding:5px 2px 7px;width:min(300px,100%);transition:border-color .2s}
+#jq:focus{border-bottom-color:var(--ink)}
+.jbar .seg{margin:0}
+.jrow{display:grid;grid-template-columns:54px minmax(0,1fr) auto;gap:20px;align-items:start;
+  padding:15px 2px;border-bottom:1px solid var(--line);cursor:pointer}
+.jrow:last-child{border-bottom:none}
+.jrow:hover{background:var(--card)}
+.jsc{padding-top:1px}
+.jsc b{display:block;font:400 15px var(--mono);color:var(--ink2);text-align:right}
+.jrow:hover .jsc b{color:var(--ink)}
+.jsc .bar{height:2px;background:color-mix(in srgb,var(--ink) 13%,var(--bg));margin-top:7px}
+.jsc .bar i{display:block;height:100%;background:var(--ink2)}
+.jrow:hover .jsc .bar i{background:var(--ink)}
+.jt{font-size:14.5px;line-height:1.35}
+.jt a{font-weight:500;text-decoration:none}
+.jt a:hover{text-decoration:underline;text-decoration-color:var(--line2);text-underline-offset:3px}
+.jt .role{color:var(--ink3);font-weight:400}
+.jm{font:400 11px var(--mono);color:var(--ink3);letter-spacing:.05em;margin-top:7px;
+  display:flex;flex-wrap:wrap;gap:2px 14px}
+.jm .hot{color:var(--ink)}
+.jm .on{color:var(--ink2)}
+.jd{font-size:13px;line-height:1.5;color:var(--ink2);margin-top:8px;max-width:74ch;text-wrap:pretty}
+/* the feed scrolls within itself, like a kanban column */
+.jlist{max-height:min(60vh,560px);overflow-y:auto;scrollbar-color:var(--line2) transparent}
+.jops{display:flex;gap:9px;align-items:center;white-space:nowrap}
+.jops .btn{opacity:.6;transition:opacity .15s,color .15s,border-color .15s}
+.jrow:hover .jops .btn,.jops .btn:focus-visible{opacity:1}
+.jmore{margin-top:16px}
+
+/* followed companies — capped like a kanban column: ~3 rows (~10 chips)
+   visible, the rest scroll within the block */
+.follows{display:flex;flex-wrap:wrap;gap:9px;max-height:150px;overflow-y:auto;
+  padding-bottom:2px;scrollbar-color:var(--line2) transparent}
+.fco{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:7px;
+  padding:8px 10px 8px 12px;cursor:pointer;transition:background .15s,color .15s}
+.fco:hover{background:var(--card2)}
+.fco.on{background:var(--ink);color:var(--bg)}
+.fco .n{font-size:13px;font-weight:500}
+.fco .c{font:400 11px var(--mono);color:var(--ink3);letter-spacing:.05em}
+.fco.on .c{color:var(--bg);opacity:.65}
+.fco .x{font:400 12px var(--mono);color:var(--ink3);opacity:.5;padding:0 2px;line-height:1}
+.fco .x:hover{opacity:1;color:var(--red)}
+.fco.on .x{color:var(--bg)}
+.fco .lk{font:400 11px var(--mono);color:var(--ink3);text-decoration:none}
+.fco .lk:hover{color:var(--ink)}
+.fco.on .lk{color:var(--bg);opacity:.65}
+
+/* interview prep strip */
+.prow{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:26px;align-items:start;padding:4px 2px}
+.jm .warn{color:var(--amber)}
+/* daily-prep tracker — the current month as an actual calendar: month name on
+   top, weekday columns Mon→Sun, one row per week; fill brightness = time spent */
+.pcal{display:flex;flex-direction:column;gap:6px;padding-top:3px}
+.pmon{font:400 10.5px var(--mono);color:var(--ink3);letter-spacing:.08em;text-transform:uppercase}
+.pdow{display:flex;gap:3px;font:400 10.5px var(--mono);color:var(--ink3)}
+.pdow span{width:13px;text-align:center}
+.pgrid{display:flex;flex-direction:column;gap:3px}
+.pgrow{display:flex;gap:3px}
+/* base tone = month membership (bright for the display month, dark outside
+   it); logged days go green — brighter with more minutes */
+.pgc{width:13px;height:13px;border-radius:3px;background:color-mix(in srgb,var(--ink) 11%,var(--bg))}
+.pgc.oth{background:color-mix(in srgb,var(--ink) 4%,var(--bg))}
+.pgc.l1{background:color-mix(in srgb,var(--green) 30%,var(--bg))}
+.pgc.l2{background:color-mix(in srgb,var(--green) 52%,var(--bg))}
+.pgc.l3{background:color-mix(in srgb,var(--green) 75%,var(--bg))}
+.pgc.l4{background:var(--green)}
+.pops{display:flex;flex-direction:column;gap:9px;align-items:flex-end;white-space:nowrap}
+/* custom slider so the thumb actually reaches the rail's end at max —
+   the native control leaves its rounded track cap sticking out past 120 */
+.pops input[type=range]{-webkit-appearance:none;appearance:none;width:150px;height:14px;
+  background:transparent;margin:0;cursor:pointer}
+.pops input[type=range]::-webkit-slider-runnable-track{height:2px;border-radius:1px;
+  background:color-mix(in srgb,var(--ink) 22%,var(--bg))}
+.pops input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:12px;height:12px;border-radius:50%;background:var(--ink);margin-top:-5px}
 
 /* ---------------- dialogs ---------------- */
 dialog{background:var(--card);color:var(--ink);border:1px solid var(--line2);border-radius:12px;
@@ -263,6 +355,12 @@ dialog[open]{animation:din .18s cubic-bezier(.22,1,.36,1)}
 .cform{display:grid;gap:13px}
 .cform .duo2{display:grid;grid-template-columns:1fr 1fr;gap:13px}
 .cform label{font:400 11px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);display:block;margin-bottom:5px}
+.amgr{display:flex;flex-wrap:wrap;gap:8px 14px;border-top:1px solid var(--line2);padding-top:12px}
+.amgr:empty{display:none}
+.amgr .ahdr{flex-basis:100%;font:400 11px var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--ink3)}
+.amgr .arow{display:inline-flex;align-items:center;gap:7px;font:400 13px var(--sans)}
+.amgr .arow button{font:400 11px var(--mono);letter-spacing:.05em;color:var(--ink3);background:none;border:1px solid var(--line2);border-radius:6px;padding:2px 8px;cursor:pointer}
+.amgr .arow button:hover{color:var(--ink);border-color:var(--ink3)}
 .cform textarea{min-height:74px;resize:vertical}
 .cfoot{display:flex;justify-content:flex-end;gap:10px;margin-top:8px}
 
@@ -275,20 +373,23 @@ dialog[open]{animation:din .18s cubic-bezier(.22,1,.36,1)}
 /* ---------------- responsive ---------------- */
 @media (max-width:1100px){
   .today-grid{grid-template-columns:1fr;gap:44px}
-  .wrap{padding:20px 26px 60px}
+  .wrap{padding:20px 26px 60px;--gut:26px}
 }
 @media (max-width:768px){
   header{flex-wrap:wrap;gap:14px 24px}
   .hright{width:100%;margin-left:0}
-  #q{flex:1}
+  #q{flex:1;min-width:0}      /* min-width:auto would push 1px past the viewport */
   h1.display,h2.display{font-size:27px}
-  .wrap{padding:16px 18px 48px}
-  .kanban{grid-template-columns:repeat(7,minmax(150px,1fr))}
+  .wrap{padding:16px 18px 48px;--gut:18px}
+  .kcol{flex-basis:min(78vw,264px)}
+  .jrow{grid-template-columns:44px minmax(0,1fr);gap:14px}
+  .jops{grid-column:2;margin-top:10px}
 }
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
 }
 </style>
+<link rel="stylesheet" href="/academics.css">
 </head>
 <body>
 <div class="wrap">
@@ -346,6 +447,7 @@ dialog[open]{animation:din .18s cubic-bezier(.22,1,.36,1)}
     </form>
     <form class="cform" id="cfArea" style="display:none" onsubmit="return createArea(event)">
       <div><label for="aLabel">area name</label><input id="aLabel" style="width:100%" required placeholder="Athletics / Open Source / …"></div>
+      <div id="aMgr" class="amgr"></div>
       <div class="empty">A new tab appears for it. File projects into it with the composer, or add <span class="cmd">area: &lt;id&gt;</span> to any record.</div>
       <div class="cfoot"><button type="button" class="btn text" onclick="composer.close()">cancel</button>
         <button class="btn primary" type="submit">add area</button></div>
@@ -353,13 +455,21 @@ dialog[open]{animation:din .18s cubic-bezier(.22,1,.36,1)}
   </div>
 </dialog>
 
+<dialog id="acdlg" class="academics">
+  <div class="dbody acdlg-body" style="position:relative">
+    <button class="dx" onclick="acdlg.close()" aria-label="close">✕</button>
+    <div id="acBody"></div>
+  </div>
+</dialog>
+
 <div id="toast"></div>
 
+<script src="/academics.js"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
 const api=(p,o)=>fetch(p,o).then(r=>r.json());
-const post=(p,b)=>api(p,{method:'POST',body:JSON.stringify(b)});
+const post=(p,b)=>api(p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const drawer=$('drawer'),composer=$('composer');
 
@@ -375,7 +485,7 @@ const STATUS_HUE={ 'needs-review':'attn','ready':'attn',
   'closed':'dead','killed':'dead','discarded':'dead','dormant':'dead','shelved':'dead','sent':'dead','paused':'dead'};
 const TERMINAL=new Set(['closed','done','killed','sent','discarded','dormant','shelved']);
 
-let S=null, cur=null, tab=(location.hash||'#today').slice(1);
+let S=null, cur=null, tab=(location.hash||'#today').slice(1).split('/')[0];
 
 /* ---------- tiny markdown (escape-first) ---------- */
 function recLink(href){
@@ -420,6 +530,7 @@ async function load(){
   S=await api('/api/state');
   S.areas=S.areas||DEFAULT_AREAS;
   S.questions=S.questions||[];
+  if(tab==='academics')await acFetch();
   render();
 }
 function areas(){return S.areas}
@@ -428,12 +539,12 @@ function liveOutbox(){return S.collections.outbox.filter(r=>!['sent','discarded'
 
 /* ---------- render root ---------- */
 function render(){
-  if(drawer.open||composer.open)return;   // don't clobber an open dialog on poll
+  if(drawer.open||composer.open||acdlg.open)return;   // don't clobber an open dialog on poll
   const kept=keepFormState();
   nav();
   const known=['today',...areas().map(a=>a.id)];
   if(!known.includes(tab))tab='today';
-  $('main').innerHTML = tab==='today'?today():areaPage(areas().find(a=>a.id===tab));
+  $('main').innerHTML = tab==='today'?today():tab==='academics'?academicsPage():areaPage(areas().find(a=>a.id===tab));
   wire();
   restoreFormState(kept);
 }
@@ -447,14 +558,14 @@ function findByKey(m,k){return !k?null:k[0]==='#'?m.querySelector(k):m.querySele
 function keepFormState(){
   const m=$('main'),a=document.activeElement,vals={};
   m.querySelectorAll('input,textarea,select').forEach(el=>{const k=formKey(el);if(k&&el.value)vals[k]=el.value});
-  return {vals,dlOpen:!!m.querySelector('#dlform.open'),
+  return {vals,open:[...m.querySelectorAll('.dlform.open')].map(f=>f.id).filter(Boolean),
     focus:a&&m.contains(a)?formKey(a):null,
     caret:a&&m.contains(a)&&a.selectionStart!=null?[a.selectionStart,a.selectionEnd]:null};
 }
 function restoreFormState(s){
   const m=$('main');
   Object.entries(s.vals).forEach(([k,v])=>{const el=findByKey(m,k);if(el)el.value=v});
-  if(s.dlOpen){const f=m.querySelector('#dlform');f&&f.classList.add('open')}
+  s.open.forEach(id=>{const f=m.querySelector('#'+CSS.escape(id));f&&f.classList.add('open')});
   const el=findByKey(m,s.focus);
   if(el){el.focus({preventScroll:true});if(s.caret&&el.setSelectionRange)try{el.setSelectionRange(s.caret[0],s.caret[1])}catch(_){}}
 }
@@ -462,7 +573,7 @@ function nav(){
   const needsDot=liveOutbox().some(r=>r.meta.status==='needs-review')||openQs().length>0;
   $('nav').innerHTML=
     `<button data-t="today" class="${tab==='today'?'on':''}">Today${needsDot?'<span class="dot"></span>':''}</button>`+
-    areas().map(a=>`<button data-t="${esc(a.id)}" class="${tab===a.id?'on':''}">${esc(a.label)}</button>`).join('')+
+    areas().filter(a=>!a.hidden).map(a=>`<button data-t="${esc(a.id)}" class="${tab===a.id?'on':''}">${esc(a.label)}</button>`).join('')+
     `<button class="add" title="new record or area" onclick="openComposer()">+</button>`;
   $('nav').querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{tab=b.dataset.t;location.hash=tab;render()});
 }
@@ -621,33 +732,259 @@ function feedHtml(){
 }
 
 /* ---------- area pages ---------- */
+const RESEARCH_DRIVE=[];  // folder links stay local
 function areaPage(a){
   if(!a)return'';
   const parts=[`<div class="masthead" style="margin-bottom:34px"><h1 class="display">${esc(a.label)}</h1></div>`];
   for(const col of a.collections){
-    if(col==='pipeline')parts.push(kanbanHtml());
+    if(col==='pipeline')parts.push(kanbanHtml(),prepHtml(),jobsHtml(),followsHtml());
     else parts.push(listHtml(col,S.collections[col],colLabel(col)));
   }
   const projs=S.collections.projects.filter(r=>(r.meta.area||'')===a.id);
   parts.push(listHtml('projects',projs,'Projects',a.id));
-  if(a.id==='academics')parts.push(academicsExtra());
   return parts.join('');
 }
-function colLabel(c){return{pipeline:'Pipeline — summer 2027',outreach:'Outreach',ventures:'Ventures',courses:'Courses',projects:'Projects',outbox:'Outbox'}[c]||c}
+function jobTerm(){return (S.jobs&&S.jobs.term)||'summer 2027'}
+function colLabel(c){return{pipeline:'Pipeline',outreach:'Outreach',ventures:'Ventures',courses:'Courses',projects:'Projects',outbox:'Outbox'}[c]||c}
+/* "Jane Street — Quantitative Trading Intern (Summer 2027)" reads as two
+   things on a card: who, then what. */
+function splitTitle(t){
+  const p=String(t||'').split(/\s+[—–]\s+/);
+  return p.length>1?{co:p[0],role:p.slice(1).join(' — ')}:{co:t||'',role:''};
+}
 function kanbanHtml(){
   const recs=S.collections.pipeline,states=S.enums.opportunity.filter(s=>s!=='closed');
   const closed=recs.filter(r=>r.meta.status==='closed');
-  return `<section style="margin-bottom:46px"><div class="sec"><h2>Pipeline — summer 2027</h2><span class="n">${recs.length-closed.length}</span></div>
-  <div class="kwrap"><div class="kanban">${states.map(st=>{
+  return `<section style="margin-bottom:54px"><div class="sec"><h2>Pipeline — ${esc(jobTerm())}</h2><span class="n">${recs.length-closed.length}</span></div>
+  <div class="kwrap" id="kwrap"><div class="kanban">${states.map(st=>{
     const cards=recs.filter(r=>r.meta.status===st);
     return `<div class="kcol" data-kst="${st}"><h3><span>${st}</span><span>${cards.length||''}</span></h3>
-      ${cards.map(r=>`<div class="kcard" data-drag="pipeline" data-dragid="${esc(r.file)}" data-kst="${st}" data-kf="${esc(r.file)}" data-open="pipeline/${esc(r.file)}">
-        <div class="t">${esc(r.meta.title)}</div>
+      <div class="kbody">${cards.map(r=>{
+        const t=splitTitle(r.meta.title);
+        return `<div class="kcard" data-drag="pipeline" data-dragid="${esc(r.file)}" data-kst="${st}" data-kf="${esc(r.file)}" data-open="pipeline/${esc(r.file)}">
+        <div class="t">${esc(t.co)}</div>
+        ${t.role?`<div class="role">${esc(t.role)}</div>`:''}
         <div class="m">${r.meta.priority==='1'?'<span class="p1">P1</span>':'P'+esc(r.meta.priority||'2')} · cpt ${esc(r.meta.cpt||'check')}${r.meta.due?' · due '+esc(r.meta.due):''}</div>
-      </div>`).join('')}</div>`;}).join('')}</div></div>
+      </div>`}).join('')}</div></div>`;}).join('')}</div></div>
   ${closed.length?`<div class="karchive"><button class="btn text" onclick="this.nextElementSibling.style.display='block';this.remove()">closed (${closed.length}) — show</button>
     <div style="display:none" class="rows">${closed.map(r=>rowHtml('pipeline',r)).join('')}</div></div>`:''}
   </section>`;
+}
+
+/* ---------- interview prep strip ----------
+   career/prep/plan.md weekly table — the current block, whether it's done,
+   and how far behind the plan is. Base conditioning only; firm tracks live
+   in career/prep/ via /interview-prep. */
+function isoDay(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+/* tracker calendar, Apple month-view rules: weeks roll continuously across
+   month boundaries, the top row is always the current week, and the header
+   names the month the top row's Monday sits in. Base tone marks that month's
+   days (bright) vs the neighbors' (dark); logged days fill green by minutes. */
+function prepLevel(m){return !m?'':m<=20?'l1':m<=45?'l2':m<=90?'l3':'l4'}
+function prepGrid(days,todayIso){
+  const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const now=new Date();
+  const mon=new Date(now);mon.setDate(now.getDate()-((now.getDay()+6)%7));   // this week's Monday
+  const dispMo=mon.getMonth();
+  let rows='';
+  for(let w=0;w<5;w++){
+    let cells='';
+    for(let i=0;i<7;i++){
+      const d=new Date(mon);d.setDate(mon.getDate()+w*7+i);
+      const di=isoDay(d),m=days.get(di)||0;
+      cells+=`<div class="pgc ${prepLevel(m)||(d.getMonth()===dispMo?'':'oth')}" title="${di}${m?` — ${m}m`:''}"></div>`;
+    }
+    rows+=`<div class="pgrow">${cells}</div>`;
+  }
+  return `<div class="pcal"><div class="pmon">${MONTHS[dispMo]}</div>
+    <div class="pdow"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+    <div class="pgrid">${rows}</div></div>`;
+}
+function prepHtml(){
+  const P=S.prep||{},wks=P.weeks||[],days=new Map(Object.entries(P.days||{}).map(([d,m])=>[d,+m]));
+  if(!wks.length)return'';
+  const todayIso=isoDay(new Date()),todayMins=days.get(todayIso)||0;
+  let streak=0;const sd=new Date();if(!todayMins)sd.setDate(sd.getDate()-1);
+  while(days.has(isoDay(sd))){streak++;sd.setDate(sd.getDate()-1)}
+  const total=[...days.values()].reduce((a,b)=>a+b,0);
+  const cur=wks.find(w=>w.current)||wks.find(w=>w.status==='open');
+  const behind=cur?wks.filter(w=>w.status==='open'&&w.week<cur.week).length:0;
+  const next=cur?wks[wks.indexOf(cur)+1]:null;
+  return `<section style="margin-bottom:54px"><div class="sec"><h2>Interview prep</h2><span class="n">${total?(Math.round(total/6)/10)+'h logged':''}</span></div>
+  <div class="prow">
+    <div>
+      ${cur?`<div class="jt"><span style="font-weight:500">${esc(cur.block)}</span></div>
+      <div class="jd">${esc(cur.focus)}</div>`:'<div class="kempty">plan blocks done — maintenance loop, it never ends</div>'}
+      <div class="jm">${cur?`week of ${esc(cur.week)} · 30-60 min/day · zetamac daily`:''}
+        <span>${days.size} day${days.size===1?'':'s'} logged</span>
+        ${streak?`<span class="hot">streak ${streak}</span>`:''}
+        ${todayMins?`<span class="on">today ${todayMins}m</span>`:''}
+        ${behind?`<span class="warn">${behind} past week${behind>1?'s':''} still open</span>`:''}
+        ${next?`<span>next: ${esc(next.block)}</span>`:''}</div>
+    </div>
+    ${prepGrid(days,todayIso)}
+    <div class="pops">
+      <span class="jm" style="margin:0"><span id="pmin">${todayMins||45}m</span> today</span>
+      <input type="range" id="pslide" min="5" max="120" step="5" value="${todayMins||45}"
+        oninput="document.getElementById('pmin').textContent=this.value+'m'">
+      <button class="btn primary" onclick="prepToday()">${todayMins?'update today':'log today'}</button>
+      ${cur?(cur.status==='done'?'<span class="on" style="font:400 11px var(--mono)">week done</span>'
+        :`<button class="btn text" onclick="prepDone('${esc(cur.week)}')">mark week done</button>`):''}
+    </div>
+  </div></section>`;
+}
+async function prepDone(w){
+  const r=await post('/api/prep',{week:w,status:'done'});
+  toast(r.ok?'prep week done':'could not update plan.md');load();
+}
+async function prepToday(){
+  const mins=+document.getElementById('pslide').value||30;
+  const r=await post('/api/prep',{day:'today',minutes:mins});
+  toast(r.ok?`logged ${mins}m — keep it going`:'could not log today');load();
+}
+
+/* ---------- jobs feed ----------
+   Discovered postings (career/jobs.json, refreshed by the daily scan). Filter
+   state is client-side only — it must survive the 30s poll, so it lives here
+   and never round-trips. */
+let jf={q:'',view:'all',sort:'match',co:'',limit:25};
+function days(iso){
+  if(!iso)return null;
+  const d=Date.parse(iso+'T00:00:00');
+  if(isNaN(d))return null;
+  const t=new Date();t.setHours(0,0,0,0);
+  return Math.round((t-d)/864e5);
+}
+function ago(n){return n===null?'':n<=0?'today':n===1?'yesterday':n+'d ago'}
+function seenWithin(j,n){const d=days(j.first_seen);return d!==null&&d<=n}
+/* "new" means new since the last scan — on the very first scan everything is
+   new, which is true but tells him nothing, so the flag stays off until the
+   feed has some history behind it. */
+let feedHasHistory=false;
+function jobMatch(j){
+  if(jf.view==='following'&&!j.follow)return false;
+  if(jf.view==='new'&&!seenWithin(j,7))return false;
+  if(jf.view==='saved'&&!['saved','tracked'].includes(j.status))return false;
+  if(jf.co&&j.follow!==jf.co)return false;
+  if(jf.q){
+    const hay=(j.company+' '+j.title+' '+(j.desc||'')+' '+(j.locations||[]).join(' ')).toLowerCase();
+    if(!jf.q.toLowerCase().split(/\s+/).filter(Boolean).every(t=>hay.includes(t)))return false;
+  }
+  return true;
+}
+function jobsHtml(){
+  const all=(S.jobs&&S.jobs.jobs)||[];
+  const live=all.filter(j=>j.status!=='hidden');
+  const hid=all.filter(j=>j.status==='hidden').length;
+  const fresh=live.filter(j=>seenWithin(j,1)).length;
+  feedHasHistory=live.some(j=>{const d=days(j.first_seen);return d!==null&&d>0});
+  let list=(jf.view==='hidden'?all.filter(j=>j.status==='hidden'):live).filter(jobMatch);
+  if(jf.sort==='newest')list=list.slice().sort((a,b)=>
+    String(b.posted||b.first_seen||'').localeCompare(String(a.posted||a.first_seen||'')));
+  const shown=list.slice(0,jf.limit);
+  const scanned=(S.jobs&&S.jobs.scanned)||'';
+  const seg=(key,opts)=>`<div class="seg">`+opts.map(([v,l])=>
+    `<button class="${jf[key]===v?'cur':''}" data-jf="${key}" data-jv="${v}">${l}</button>`).join('')+`</div>`;
+  const views=[['all','all'],['following','following'],['new','new'],['saved','saved']]
+    .concat(jf.view==='hidden'?[['hidden','hidden']]:[]);
+  return `<section id="jobs" style="margin-bottom:54px">
+    <div class="sec"><h2>Jobs for you</h2><span class="n">${live.length}</span>
+      <button class="act right" id="jscan" onclick="jobScan()">scan now</button></div>
+    <div class="jbar">
+      <input id="jq" placeholder="search title, company, location…" autocomplete="off" spellcheck="false" value="${esc(jf.q)}">
+      ${seg('view',views)}
+      ${seg('sort',[['match','match'],['newest','newest']])}
+    </div>
+    <div class="subline" style="margin:14px 0 4px">${live.length} open · ${
+      feedHasHistory?`${fresh} new today`:'first scan'}${
+      scanned?` · scanned ${esc(scanned)}`:''}${jf.co?` · filtered to ${esc(jf.co)}`:''}</div>
+    ${shown.length?`<div class="jlist">${shown.map(jobRow).join('')}</div>`:`<div class="empty">${
+      !live.length?'No postings yet — the scan runs with the morning briefing, or hit <span class="cmd">scan now</span>.'
+      :jf.view==='saved'?'Nothing saved yet — <span class="cmd">save</span> keeps a posting here; <span class="cmd">track</span> turns it into a pipeline record.'
+      :jf.view==='following'?'None of your followed companies have an open posting right now. They will appear here the day they do.'
+      :jf.view==='new'?'Nothing new since the last scan.'
+      :'Nothing matches those filters.'}</div>`}
+    ${list.length>shown.length?`<div class="jmore"><button class="btn text" onclick="jf.limit+=25;render()">show ${Math.min(25,list.length-shown.length)} more (${list.length-shown.length} left)</button></div>`:''}
+    ${hid?`<div class="karchive"><button class="btn text" onclick="jf.view='hidden';jf.limit=25;render()">hidden (${hid}) — show</button></div>`:''}
+  </section>`;
+}
+function jobRow(j){
+  const dated=!!j.posted, d=days(dated?j.posted:j.first_seen);
+  const meta=[esc(j.term||''),esc((j.locations||[]).slice(0,3).join(' · ')||'location not stated'),
+    d===null?'date unknown':(dated?'posted ':'seen ')+ago(d)];
+  const flags=[feedHasHistory&&seenWithin(j,1)?'<span class="hot">new</span>':'',
+    j.follow?`<span class="on">following ${esc(j.follow)}</span>`:'',
+    j.status==='saved'?'<span class="on">saved</span>':'',
+    j.status==='tracked'?'<span class="on">in pipeline</span>':'',
+    j.open?'':'<span>closed</span>'].filter(Boolean);
+  return `<div class="jrow" data-jurl="${esc(j.url)}">
+    <div class="jsc" title="${esc(j.why||'')}"><b>${esc(j.score)}</b><div class="bar"><i style="width:${Math.max(0,Math.min(100,+j.score||0))}%"></i></div></div>
+    <div>
+      <div class="jt"><a href="${esc(j.url)}" target="_blank" rel="noopener">${esc(j.company)}</a>
+        <span class="role">— ${esc(j.title)}</span></div>
+      <div class="jm">${meta.map(m=>`<span>${m}</span>`).join('')}${flags.join('')}</div>
+      ${j.desc?`<div class="jd">${esc(j.desc)}</div>`:''}
+    </div>
+    <div class="jops">
+      <a class="btn" href="${esc(j.url)}" target="_blank" rel="noopener">apply ↗</a>
+      ${j.status==='tracked'
+        ?`<button class="btn text" data-jrec="${esc(j.record||'')}">open record</button>`
+        :`<button class="btn text" data-jtrack="${esc(j.id)}">track</button>`}
+      <button class="btn text" data-jst="${esc(j.id)}" data-jv="${j.status==='saved'?'new':'saved'}">${j.status==='saved'?'unsave':'save'}</button>
+      <button class="btn text" data-jst="${esc(j.id)}" data-jv="${j.status==='hidden'?'new':'hidden'}" title="${j.status==='hidden'?'restore':'hide'}">${j.status==='hidden'?'↩':'✕'}</button>
+    </div>
+  </div>`;
+}
+function followsHtml(){
+  const fs=(S.jobs&&S.jobs.following)||[];
+  return `<section style="margin-bottom:54px">
+    <div class="sec"><h2>Followed companies</h2><span class="n">${fs.length||''}</span>
+      <button class="act right" onclick="fcToggle()">+ follow</button></div>
+    ${fs.length?`<div class="follows">${fs.map(f=>`<div class="fco ${jf.co===f.name?'on':''}" data-fco="${esc(f.name)}">
+      <span class="n">${esc(f.name)}</span><span class="c">${f.open?f.open+' open':'none open'}</span>
+      ${f.url?`<a class="lk" href="${esc(f.url)}" target="_blank" rel="noopener" title="careers page">↗</a>`:''}
+      <button class="x" data-unfollow="${esc(f.name)}" title="unfollow">✕</button></div>`).join('')}</div>`
+    :`<div class="empty">Not following anyone yet. Following a company surfaces <em>every</em> role it posts and lifts its match scores.</div>`}
+    <form class="dlform" id="fcform" onsubmit="return fcAdd(event)" style="margin-top:14px">
+      <input class="item" id="fcName" placeholder="company name — e.g. Radix Trading" required>
+      <input class="item" id="fcUrl" placeholder="careers page (optional)">
+      <button class="btn">follow</button>
+    </form>
+  </section>`;
+}
+function fcToggle(){const f=$('fcform');f&&f.classList.toggle('open')}
+async function fcAdd(e){
+  e.preventDefault();
+  const r=await post('/api/follow',{name:$('fcName').value.trim(),url:$('fcUrl').value.trim()});
+  toast(r.ok?'following — their postings now rank higher':'already following that company');
+  if(r.ok){$('fcName').value='';$('fcUrl').value=''}
+  load();
+  return false;
+}
+async function unfollow(name){
+  if(!confirm(`Stop following ${name}?`))return;
+  await post('/api/follow',{name,remove:true});
+  if(jf.co===name)jf.co='';
+  toast('unfollowed');load();
+}
+async function jobStatus(id,v){
+  await post('/api/job',{id,status:v});
+  toast(v==='saved'?'saved':v==='hidden'?'hidden from the feed':'restored');
+  load();
+}
+async function jobTrack(id){
+  const r=await post('/api/job',{id,action:'track'});
+  toast(r.ok?'tracked — now a pipeline record':'could not create the record');
+  await load();
+  if(r.ok&&r.file)openRec('pipeline',r.file);
+}
+async function jobScan(){
+  const b=$('jscan');if(b){b.textContent='scanning…';b.disabled=true}
+  try{
+    const s=await post('/api/jobscan',{});
+    toast(`${s.open} open · +${s.added} new${s.errors&&s.errors.length?' · '+s.errors.length+' source failed':''}`);
+  }catch(_){toast('scan failed — is the backend running?')}
+  load();
 }
 function rowHtml(col,r){
   const m=r.meta;
@@ -672,14 +1009,110 @@ function listHtml(col,recs,label,areaId){
       <div style="display:none" class="rows">${arch.map(r=>rowHtml(col,r)).join('')}</div></div>`:''}
   </section>`;
 }
-function academicsExtra(){
-  return `<section style="margin-bottom:46px"><div class="sec"><h2>All deadlines</h2><button class="act" onclick="dlToggle()">+ add</button></div>
-    ${deadlinesHtml()}
-    <form class="dlform" id="dlform" onsubmit="return dlAdd(event)">
-      <input type="date" id="dlDate" required><select id="dlDom"><option>uni</option><option>career</option><option>research</option><option>venture</option></select>
-      <input class="item" id="dlItem" placeholder="what's due" required><button class="btn">add</button>
-    </form></section>`;
+/* ---------- academics: the mini-Canvas surface ----------
+   Pure rendering lives in academics.js (PierceAcademics); this block owns
+   state, fetching, and wiring. Canvas facts come from /api/academics/*;
+   the last-good mirror keeps rendering through failed refreshes. */
+const acdlg=$('acdlg');
+let AC={overview:null,course:null,err:null,ui:{course:'',status:'',horizon:'',q:''}};
+async function acFetch(){
+  try{
+    const route=PierceAcademics.parseRoute(location.hash);
+    AC.overview=await api('/api/academics/overview');
+    AC.course=route.view==='course'
+      ?await api('/api/academics/course?id='+encodeURIComponent(route.id)):null;
+    AC.err=null;
+  }catch(_){AC.err='backend unreachable — restart the dashboard (python3 os/dashboard/serve.py)'}
 }
+function academicsPage(){
+  const route=PierceAcademics.parseRoute(location.hash);
+  const now=new Date().toISOString();
+  let inner;
+  if(AC.err)inner=`<div class="empty">${esc(AC.err)}</div>`;
+  else if(route.view==='course')
+    inner=AC.course&&!AC.course.err
+      ?PierceAcademics.renderCourse(AC.course,now)
+      :`<div class="empty">${AC.course?'course not found in the local mirror':'loading course…'}</div>`;
+  else inner=AC.overview
+    ?PierceAcademics.renderOverview(AC.overview,AC.ui,now)
+    :`<div class="empty">loading Canvas data…</div>`;
+  const head=route.view==='course'?'':
+    `<div class="masthead" style="margin-bottom:26px"><h1 class="display">Academics</h1></div>`;
+  const projs=S.collections.projects.filter(r=>(r.meta.area||'')==='academics');
+  return `<div class="academics">${head}${inner}</div>`
+    +(route.view==='course'?'':listHtml('projects',projs,'Projects','academics'));
+}
+let acqt,acRefreshTimer;
+function wireAcademics(){
+  const r=document.querySelector('[data-ac-refresh]');
+  if(r)r.onclick=acRefresh;
+  document.querySelectorAll('[data-ac-filter]').forEach(el=>{
+    if(el.dataset.acFilter==='q')el.oninput=()=>{clearTimeout(acqt);
+      acqt=setTimeout(()=>{AC.ui.q=el.value;render()},180)};
+    else el.onchange=()=>{AC.ui[el.dataset.acFilter]=el.value;render()};
+  });
+  document.querySelectorAll('[data-ac-a]').forEach(el=>el.addEventListener('click',e=>{
+    if(e.target.closest('a'))return;
+    e.stopPropagation();openAsg(el.dataset.acA);
+  }));
+  document.querySelectorAll('#main [data-ai-action]').forEach(b=>b.onclick=()=>acAi(b));
+}
+async function acRefresh(){
+  await post('/api/academics/refresh',{trigger:'manual'});
+  toast('refresh requested — asking the Canvas extension');
+  window.dispatchEvent(new CustomEvent('pierce:canvas-refresh',{detail:{trigger:'manual'}}));
+  clearTimeout(acRefreshTimer);
+  acRefreshTimer=setTimeout(()=>
+    toast('no reply from the Canvas extension — is it installed and Chrome running?'),6000);
+}
+window.addEventListener('pierce:canvas-refresh-status',async e=>{
+  clearTimeout(acRefreshTimer);
+  const st=(e.detail&&e.detail.status)||'failed';
+  toast(st==='success'?'Canvas refreshed'
+    :st==='login_required'?'Canvas login required — log in on canvas.ucsd.edu, then refresh again'
+    :st==='partial'?'partial refresh — one or more courses failed; last good data kept'
+    :'refresh failed — last good data kept');
+  await load();
+});
+async function openAsg(id){
+  const a=await api('/api/academics/assignment?id='+encodeURIComponent(id));
+  if(!a||a.err){toast('assignment not found in the local mirror');return}
+  $('acBody').innerHTML=PierceAcademics.renderAssignmentDialog(a,new Date().toISOString());
+  const save=$('acBody').querySelector('[data-ac-note]');
+  if(save)save.onclick=async()=>{
+    const r=await post('/api/academics/note',
+      {assignment_id:save.dataset.acNote,note:$('ac-note').value});
+    toast(r.ok?'note saved locally — refreshes never touch it':'note failed');
+  };
+  $('acBody').querySelectorAll('[data-ai-action]').forEach(b=>b.onclick=()=>acAi(b));
+  acdlg.showModal();
+}
+async function acAi(btn){
+  const scopeEl=btn.closest('.dbody')||document.querySelector('#main .academics');
+  const slot=scopeEl&&scopeEl.querySelector('[data-ai-slot]');
+  let question='';
+  if(btn.dataset.aiAction==='course_question'){
+    question=prompt('Ask Claude about this course (uses its local Canvas context):')||'';
+    if(!question.trim())return;
+  }
+  try{
+    const r=await post('/api/academics/ai',{action:btn.dataset.aiAction,
+      scope_type:btn.dataset.aiScope,scope_id:btn.dataset.aiId,question});
+    if(!r||r.err||!r.job_id){toast((r&&r.err)||'Claude tools unavailable');return}
+    acPollAi(r.job_id,slot);
+  }catch(_){toast('Claude tools unavailable')}
+}
+async function acPollAi(id,slot){
+  for(let i=0;i<60;i++){
+    let j;
+    try{j=await api('/api/academics/ai?id='+encodeURIComponent(id))}catch(_){return}
+    if(slot)slot.innerHTML=PierceAcademics.renderAiResult(j);
+    if(!j||j.status==='complete'||j.status==='failed')return;
+    await new Promise(res=>setTimeout(res,3000));
+  }
+}
+acdlg.addEventListener('click',e=>{if(e.target===acdlg)acdlg.close()});
+acdlg.addEventListener('close',()=>render());
 
 /* ---------- wiring ---------- */
 function wire(){
@@ -694,6 +1127,32 @@ function wire(){
   document.querySelectorAll('[data-qin]').forEach(i=>i.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();answerQ(i.dataset.qin)}});
   document.querySelectorAll('[data-dld]').forEach(b=>b.onclick=()=>dlDone(b.dataset.dld,b.dataset.dli));
   document.querySelectorAll('.rl').forEach(el=>el.onclick=()=>openRec(el.dataset.col,el.dataset.file));
+  // jobs feed: the row itself is the application link; controls opt out
+  document.querySelectorAll('[data-jurl]').forEach(el=>el.addEventListener('click',e=>{
+    if(e.target.closest('button,a'))return;
+    window.open(el.dataset.jurl,'_blank','noopener');
+  }));
+  document.querySelectorAll('[data-jst]').forEach(b=>b.onclick=()=>jobStatus(b.dataset.jst,b.dataset.jv));
+  document.querySelectorAll('[data-jtrack]').forEach(b=>b.onclick=()=>jobTrack(b.dataset.jtrack));
+  document.querySelectorAll('[data-jrec]').forEach(b=>b.onclick=()=>b.dataset.jrec
+    ?openRec('pipeline',b.dataset.jrec):toast('no record linked — track it again'));
+  document.querySelectorAll('[data-jf]').forEach(b=>b.onclick=()=>{
+    jf[b.dataset.jf]=b.dataset.jv;jf.limit=25;render()});
+  document.querySelectorAll('[data-fco]').forEach(el=>el.addEventListener('click',e=>{
+    if(e.target.closest('button,a'))return;
+    jf.co=jf.co===el.dataset.fco?'':el.dataset.fco;jf.limit=25;render();
+    const s=$('jobs');s&&s.scrollIntoView({behavior:'smooth',block:'start'});
+  }));
+  document.querySelectorAll('[data-unfollow]').forEach(b=>b.onclick=()=>unfollow(b.dataset.unfollow));
+  const jq=$('jq');
+  if(jq)jq.oninput=()=>{clearTimeout(jqt);jqt=setTimeout(()=>{jf.q=jq.value;jf.limit=25;render()},180)};
+  // the board scrolls sideways, so dragging to a far column needs the edges live
+  const kw=$('kwrap');
+  if(kw)kw.addEventListener('dragover',e=>{
+    const r=kw.getBoundingClientRect();
+    if(e.clientX>r.right-100)kw.scrollLeft+=20;
+    else if(e.clientX<r.left+100)kw.scrollLeft-=20;
+  });
   // kanban dnd — cross-column drop = status change; same-column = reorder to end
   document.querySelectorAll('.kcol').forEach(col=>{
     col.ondragover=e=>{e.preventDefault();col.classList.add('over')};
@@ -706,6 +1165,7 @@ function wire(){
       const moved=document.querySelector(`[data-kf="${CSS.escape(f)}"]`);moved&&moved.classList.add('flash');};
   });
   sortable();
+  wireAcademics();
   const u=$('updText');
   if(u)u.onkeydown=e=>{if((e.metaKey||e.ctrlKey)&&e.key==='Enter')postUpd(e)};
 }
@@ -755,11 +1215,24 @@ async function reorder(key,src,before){
 }
 
 /* ---------- tell the OS ---------- */
+/* Watch a headless fold-in until it lands, then refresh so what he just told
+   the OS is visible now, not after the next 30s poll. Safe to run several at
+   once — the server serializes the actual runs. */
+async function watchIngest(id){
+  if(!id)return;
+  for(let i=0;i<60;i++){
+    await new Promise(r=>setTimeout(r,3000));
+    try{
+      const s=await api('/api/ingest?id='+id);
+      if(s.done){toast(s.ok?'folded in — records updated':'fold-in failed — kept for the daily reflect');load();return}
+    }catch(e){return}
+  }
+}
 async function postUpd(e){
   e.preventDefault();
   const t=$('updText').value.trim();if(!t)return false;
   const r=await post('/api/update',{text:t});
-  if(r.ok){$('updText').value='';toast('posted — the OS is folding it in');load()}
+  if(r.ok){$('updText').value='';toast('posted — the OS is folding it in');load();watchIngest(r.ingest)}
   else toast('post failed');
   return false;
 }
@@ -828,9 +1301,10 @@ async function setStatus(s){
 }
 async function addNote(){
   if(!cur||!$('dNote').value.trim())return;
-  await post('/api/note',{col:cur.col,file:cur.rec.file,line:$('dNote').value.trim()});
+  const r=await post('/api/note',{col:cur.col,file:cur.rec.file,line:$('dNote').value.trim()});
   toast('logged — folding into the record');
   const{col,rec}=cur;drawer.close();await load();openRec(col,rec.file);
+  watchIngest(r.ingest);
 }
 drawer.addEventListener('click',e=>{if(e.target===drawer)drawer.close()});
 drawer.addEventListener('close',()=>{cur=null;render()});
@@ -838,7 +1312,8 @@ drawer.addEventListener('close',()=>{cur=null;render()});
 /* ---------- composer ---------- */
 function openComposer(){
   const aSel=$('cArea');
-  aSel.innerHTML=`<option value="">— none —</option>`+areas().map(a=>`<option value="${esc(a.id)}">${esc(a.label)}</option>`).join('');
+  aSel.innerHTML=`<option value="">— none —</option>`+areas().map(a=>`<option value="${esc(a.id)}">${esc(a.label)}${a.hidden?' (hidden)':''}</option>`).join('');
+  renderAreaMgr();
   if(tab!=='today'){
     aSel.value=tab;
     const defCol={career:'pipeline',academics:'courses',business:'ventures'}[tab]||'projects';
@@ -861,6 +1336,22 @@ async function createRec(e){
   else toast('create failed — is the backend updated?');
   return false;
 }
+function renderAreaMgr(){
+  const vis=areas().filter(a=>!a.hidden),hid=areas().filter(a=>a.hidden);
+  $('aMgr').innerHTML=
+    vis.map(a=>`<span class="arow">${esc(a.label)}<button type="button" onclick="setAreaHidden('${esc(a.id)}',true)">hide</button></span>`).join('')+
+    (hid.length?`<span class="ahdr">hidden</span>`+
+      hid.map(a=>`<span class="arow">${esc(a.label)}<button type="button" onclick="setAreaHidden('${esc(a.id)}',false)">show</button></span>`).join(''):'');
+}
+async function setAreaHidden(id,hide){
+  const r=await post('/api/area',{id,hide});
+  if(!r.ok){toast('area update failed');return}
+  const a=S.areas.find(x=>x.id===id);
+  if(a){if(hide)a.hidden=true;else delete a.hidden}
+  if(hide&&tab===id){tab='today';location.hash='today'}
+  renderAreaMgr();nav();
+  toast(hide?'area hidden — restore it from +':'area restored');
+}
 async function createArea(e){
   e.preventDefault();
   const label=$('aLabel').value.trim();
@@ -875,7 +1366,7 @@ composer.addEventListener('click',e=>{if(e.target===composer)composer.close()});
 composer.addEventListener('close',()=>render());
 
 /* ---------- search ---------- */
-let qt;
+let qt,jqt;
 $('q').addEventListener('input',e=>{
   clearTimeout(qt);
   qt=setTimeout(async()=>{
@@ -910,9 +1401,17 @@ function tick(){
   $('clock').textContent=s;
 }
 tick();setInterval(tick,30000);
-window.addEventListener('hashchange',()=>{const t=(location.hash||'#today').slice(1);if(t!==tab){tab=t;render()}});
+window.addEventListener('hashchange',()=>{
+  const t=(location.hash||'#today').slice(1).split('/')[0];
+  const changed=t!==tab;tab=t;
+  if(tab==='academics'){render();acFetch().then(render)}   // route change within academics too
+  else if(changed)render();
+});
 load();
 setInterval(()=>{if(!document.hidden)load()},30000);
 </script>
+<!-- impeccable-live-start -->
+<script src="http://localhost:8401/live.js"></script>
+<!-- impeccable-live-end -->
 </body>
 </html>

@@ -107,6 +107,8 @@ actions extracted from the briefing's proposals, activity feed; rail with outbox
 approvals, questions-for-me, deadlines, Google Calendar embed) plus one tab per area
 (`areas.json`: Career, Academics, Business, Research, extensible from the composer).
 Records open in a centered `<dialog>` drawer; a `+` composer creates records and areas.
+The Career tab is the one deep surface (v4, 2026-07-25): side-scrolling pipeline board →
+matched-jobs feed → followed companies → outreach → projects, in that order.
 
 **Key characteristics:**
 - **One ink.** `#ffe6cb` cream is the only chromatic voice; card (5%), card2 (8%),
@@ -179,10 +181,31 @@ Prose measure caps at 72ch. `text-wrap: balance` on display headings.
   (ink3) + right-aligned Courier meta + status word. Bottom hairline; hover tints
   the row `card`. Terminal-status records collapse into an "archive (n) — show"
   text-button group.
-- **Kanban card**: `card` tint, 8px radius, 11×13px padding, title + Courier meta
-  line (P1 in amber, cpt, due). Drag targets brighten the column header; a moved
-  card pulses `wash` once (1.4s). No colored side-stripes — priority is a typed
-  amber "P1", not a border.
+- **Pipeline board** (Career, v4 2026-07-25): columns are a flex row that scrolls
+  sideways inside a full-bleed `.kwrap` (negative `--gut` margins, matching
+  padding), each column a fixed 264px with its own vertically scrolling
+  `.kbody` (`max-height: min(56vh, 520px)`). Eight statuses no longer compress
+  into one viewport; the cut-off card at a column's bottom edge is the scroll
+  affordance. Dragging near either edge of the board auto-scrolls it.
+- **Kanban card**: `card` tint, 8px radius, 12×13px padding, company (13.5/500)
+  over role (12.5, ink3) — the record title split at its em dash — then a Courier
+  meta line (P1 in amber, cpt, due). Drag targets brighten the column header; a
+  moved card pulses `wash` once (1.4s). No colored side-stripes — priority is a
+  typed amber "P1", not a border.
+- **Job row** (Career, "Jobs for you"): a flat hairline-separated row, never a
+  card grid — 54px score gutter / content / actions. The score is Courier 15px
+  over a 2px meter (ink2 fill on a 13% ink track, ink at full on row hover):
+  match is the one quantity on this page, and it stays in the single ink rather
+  than earning a hue. Content is company (cream 500, the link) — role (ink3),
+  a Courier meta line (term · locations · posted/seen), state words in ink2
+  ("following X", "saved", "in pipeline") with a brand-new posting in full ink,
+  then the scout's description at 13px/1.5, capped at 74ch. Actions sit at 60%
+  opacity until row hover or keyboard focus — present, not shouting. The row
+  itself opens the application page; `apply ↗` is the visible affordance for it.
+- **Follow chip**: `card` tint, 7px radius, name (13/500) + Courier open count +
+  optional `↗` careers link + a quiet `✕`. Active (filtering) inverts to the
+  cream fill of a primary button. "none open" is a real state, not an absence —
+  it's what a followed company looks like the day before it posts.
 - **Outbox item**: title + status word, destination and redactor lines, then
   `approve` (primary) / `discard` (danger) at needs-review; `mark sent` / `reopen`
   once approved. Discard confirms.
@@ -207,6 +230,32 @@ Prose measure caps at 72ch. `text-wrap: balance` on display headings.
   borderless text — all 12px Courier, 6px radius. One vocabulary everywhere.
 - **Empty states teach**: they name the skill that fills the section
   (`/venture-brief`, `/cold-outreach`) or point at `+`.
+- **Academics surface** (v5, 2026-07-28; `app/academics.js` + `app/academics.css`):
+  the mini-Canvas, entirely inside the Hermes system. Masthead is a Courier
+  connection readout (state word · last success/attempt) over an explicit trust
+  note for every non-connected state (`login_required`, `stale`, `partial`,
+  `failed`, `never_synced` — words, never hue alone) plus `refresh now` /
+  `open Canvas` / `log into Canvas`. Below it a **four-column academic pulse**
+  framed by top/bottom hairlines (due next / overdue·missing / submitted
+  recently / changed) — the urgent fact is 17px sans 500 over Courier metadata;
+  red only on a real overdue count, amber on missing, green on submitted. A
+  horizontal **course strip** (hairline-separated links: Courier code, sans
+  name, next-due readout, state word) leads to `#academics/course/<id>`
+  workspaces. The **assignment queue** is a flat grid row per assignment:
+  status word, course code, title + one-line excerpt, exact local due time
+  with zone abbreviation, `Canvas ↗` — filtered by native selects + search.
+  Status words map `overdue`→red, `missing`/`due soon`→amber,
+  `submitted`/`excused`/`graded`→green, `open`→ink3. The merged **All
+  deadlines** view labels each row's source (`CANVAS`/`MANUAL` chip); only
+  `uni` table rows get the local ✓ — Canvas completion is Canvas's alone.
+  The assignment dialog reuses the drawer pattern (facts grid, instructions,
+  attachments, feedback, a local-note textarea that syncs never touch).
+  Claude output always sits in a hairline-topped block labeled
+  `Claude guidance …` (Courier caps) and never replaces Canvas facts; syllabus
+  prose is labeled `policy-filtered view` with the original source
+  downloadable. Responsive: pulse 4→2→1 columns, queue rows collapse to one
+  reading column at 640px, filters scroll horizontally, 44px touch targets on
+  coarse pointers.
 
 ## 6. Motion
 

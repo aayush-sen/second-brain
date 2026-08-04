@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#041c1c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/apple-touch-icon.png">
+<title>Pierce</title>
+<style>
+@font-face{font-family:'Mondwest';src:url('/fonts/Mondwest-Regular.woff2') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:'Courier Prime';src:url('/fonts/CourierPrime-Regular.woff2') format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:'Courier Prime';src:url('/fonts/CourierPrime-Bold.woff2') format('woff2');font-weight:700;font-display:swap}
+:root{
+  --bg:#041c1c; --ink:#ffe6cb;
+  --card:color-mix(in srgb,var(--ink) 5%,var(--bg));
+  --card2:color-mix(in srgb,var(--ink) 8%,var(--bg));
+  --line:color-mix(in srgb,var(--ink) 14%,transparent);
+  --line2:color-mix(in srgb,var(--ink) 26%,transparent);
+  --ink2:color-mix(in srgb,var(--ink) 78%,var(--bg));
+  --ink3:color-mix(in srgb,var(--ink) 58%,var(--bg));
+  --amber:#ffbd38;      /* one meaning: needs Aayush (matches DESIGN.md) */
+  --red:#ff6467;        /* one meaning: destructive / overdue */
+  --mono:'Courier Prime',monospace; --disp:'Mondwest',serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--mono);
+  padding:calc(58px + env(safe-area-inset-top)) 0 40px}
+::selection{background:var(--ink);color:var(--bg)}
+
+/* fixed top bar — Pierce + menu stay put while scrolling */
+#bar{position:fixed;top:0;left:0;right:0;z-index:4;background:var(--bg);
+  border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;
+  padding:calc(12px + env(safe-area-inset-top)) 14px 12px}
+.wordmark{font:400 21px var(--disp);letter-spacing:.02em;white-space:nowrap}
+#sync{font-size:12px;color:var(--ink3);text-transform:uppercase;letter-spacing:.07em;margin-left:auto}
+#sync.stale{color:var(--amber)}
+#burger{background:none;border:none;padding:6px 2px 6px 10px;cursor:pointer;display:flex;flex-direction:column;gap:4px}
+#burger span{display:block;width:20px;height:2px;background:var(--ink)}
+#menu{position:fixed;top:calc(52px + env(safe-area-inset-top));right:10px;z-index:4;
+  background:var(--card2);border:1px solid var(--line2);border-radius:8px;min-width:150px;overflow:hidden}
+#menu button{display:block;width:100%;text-align:left;background:none;border:none;cursor:pointer;
+  font:400 13px var(--mono);text-transform:uppercase;letter-spacing:.07em;color:var(--ink3);
+  padding:13px 16px;border-bottom:1px solid var(--line)}
+#menu button:last-child{border-bottom:none}
+#menu button.on{color:var(--ink);background:var(--card)}
+
+main{padding:6px 14px}
+h2{font:400 12px var(--mono);text-transform:uppercase;letter-spacing:.09em;color:var(--ink3);margin:18px 0 8px}
+
+/* masthead — mirrors desktop today() */
+.masthead{margin:14px 0 8px}
+h1.display{font:400 34px/1.15 var(--disp);letter-spacing:.01em;text-wrap:balance}
+.subline{font:400 12px var(--mono);color:var(--ink3);letter-spacing:.07em;text-transform:uppercase;margin-top:8px}
+.subline .warn{color:var(--amber)}
+#needs{display:flex;flex-direction:column;gap:9px;margin:20px 0 4px}
+#needs .nd{font-size:13.5px;color:var(--ink2);display:flex;gap:9px;align-items:baseline}
+#needs .nd::before{content:'●';font-size:8px;color:var(--amber);transform:translateY(-2px)}
+
+/* briefing prose — copied from desktop */
+.prose{max-width:72ch;font-size:15px;color:var(--ink2);margin-top:10px}
+.prose p{margin:0 0 14px}
+.prose strong{color:var(--ink);font-weight:600}
+.prose em{color:var(--ink3)}
+.prose h3{font:400 17px var(--disp);color:var(--ink);margin:26px 0 10px;letter-spacing:.02em}
+.prose h3:first-child{margin-top:0}
+.prose ul,.prose ol{margin:0 0 14px;padding-left:22px}
+.prose li{margin:0 0 9px}
+.prose li::marker{font-family:var(--mono);color:var(--ink3);font-size:12px}
+.prose code{font:400 13px var(--mono);background:var(--card2);padding:1px 5px;border-radius:4px}
+.prose a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--line2);text-underline-offset:3px}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:8px}
+.card .t{color:var(--ink2)}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.chip{font:700 12px var(--mono);text-transform:uppercase;letter-spacing:.05em;
+  border:1px solid var(--line2);border-radius:7px;padding:3px 10px;background:var(--card2);color:var(--ink2);white-space:nowrap}
+button.chip{cursor:pointer}
+.chip.live{color:var(--bg);background:var(--amber);border-color:var(--amber)}
+.dim{opacity:.45}
+.due-soon{color:var(--amber)}.overdue{color:var(--red)}
+.meta{font-size:12px;color:var(--ink3)}
+.queued{border-style:dashed;opacity:.75}
+.q-tag{font-size:12px;color:var(--amber);text-transform:uppercase;letter-spacing:.07em}
+
+input,select,textarea{font:15px var(--mono);color:var(--ink);background:var(--card2);
+  border:1px solid var(--line2);border-radius:6px;padding:8px;width:100%}
+textarea{min-height:140px;resize:vertical}
+.btn{font:700 13px var(--mono);text-transform:uppercase;letter-spacing:.07em;color:var(--bg);
+  background:var(--ink);border:none;border-radius:6px;padding:10px 16px;margin-top:10px;cursor:pointer;width:100%}
+#gate{padding:40vh 24px 0;text-align:center}
+#gate h1{font:400 28px var(--disp);margin-bottom:16px}
+.toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom));left:14px;right:14px;
+  background:var(--ink);color:var(--bg);border-radius:6px;padding:10px 14px;font-weight:700;text-align:center;z-index:5}
+</style>
+</head>
+<body>
+<div id="gate" hidden>
+  <h1>Pierce</h1>
+  <input id="tok" type="password" placeholder="access token" autocomplete="off">
+  <button class="btn" onclick="saveTok()">Enter</button>
+</div>
+<div id="bar" hidden>
+  <span class="wordmark">Pierce</span>
+  <span id="sync"></span>
+  <button id="burger" aria-label="menu" onclick="toggleMenu(event)"><span></span><span></span><span></span></button>
+</div>
+<div id="menu" hidden>
+  <button data-tab="today" class="on">Today</button>
+  <button data-tab="todo">Todo</button>
+  <button data-tab="notes">Notes</button>
+  <button data-tab="ask">Ask</button>
+</div>
+<main id="main" hidden></main>
+<script>
+"use strict";
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
+  ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let S = null, updatedAt = null, tab = "today";
+
+const store = {
+  get tok() { return localStorage.phone_token || ""; },
+  set tok(v) { localStorage.phone_token = v; },
+  get queue() { try { return JSON.parse(localStorage.phone_queue || "[]"); } catch { return []; } },
+  set queue(v) { localStorage.phone_queue = JSON.stringify(v); },
+};
+
+function saveTok() {
+  store.tok = $("#tok").value.trim();
+  boot();
+}
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, { ...opts, headers: {
+    Authorization: "Bearer " + store.tok,
+    ...(opts.body ? { "Content-Type": "application/json" } : {}) } });
+  if (r.status === 401) { store.tok = ""; boot(); throw new Error("unauthorized"); }
+  return r.json();
+}
+
+async function refresh() {
+  try {
+    const { data, updated_at } = await api("/api/state");
+    S = data; updatedAt = updated_at;
+    localStorage.phone_state = JSON.stringify({ data, updated_at });
+    store.queue = store.queue.filter((q) => q.ts > updated_at);
+  } catch (e) {
+    const c = localStorage.phone_state;
+    if (!S && c) { const p = JSON.parse(c); S = p.data; updatedAt = p.updated_at; }
+  }
+  render();
+}
+
+async function act(kind, payload, label) {
+  const entry = { kind, payload, label, ts: new Date().toISOString() };
+  store.queue = [...store.queue, entry];
+  render();
+  try {
+    await api("/api/act", { method: "POST", body: JSON.stringify({ kind, payload }) });
+    toast("queued — applies within ~2 min");
+  } catch (e) {
+    toast("failed to queue: " + e.message);
+    store.queue = store.queue.filter((x) => x.ts !== entry.ts);
+    render();
+  }
+}
+
+function toast(msg) {
+  const t = document.createElement("div");
+  t.className = "toast"; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2200);
+}
+
+function syncLabel() {
+  if (!updatedAt) return;
+  const mins = Math.round((Date.now() - new Date(updatedAt)) / 60000);
+  $("#sync").textContent = mins < 1 ? "synced now" : `synced ${mins}m ago`;
+  $("#sync").className = mins > 10 ? "stale" : "";
+}
+
+/* ---------- menu ---------- */
+function toggleMenu(e) {
+  e.stopPropagation();
+  $("#menu").hidden = !$("#menu").hidden;
+}
+document.addEventListener("click", (e) => {
+  if (!$("#menu").hidden && !$("#menu").contains(e.target)) $("#menu").hidden = true;
+});
+document.querySelectorAll("#menu button").forEach((b) => b.onclick = () => {
+  tab = b.dataset.tab;
+  document.querySelectorAll("#menu button").forEach((x) => x.classList.toggle("on", x === b));
+  $("#menu").hidden = true;
+  window.scrollTo(0, 0);
+  if (tab === "ask") loadAsks();
+  render();
+});
+
+/* ---------- markdown (copied from desktop dashboard) ---------- */
+function inline(s) {
+  s = s.replace(/`([^`]+)`/g, (m, c) => "<code>" + c + "</code>");
+  s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (m, t, h) =>
+    /^https?:\/\//.test(h) ? `<a href="${esc(h)}" target="_blank" rel="noopener">${t}</a>` : t);
+  s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  s = s.replace(/(^|\s)\*([^*\s][^*]*)\*/g, "$1<em>$2</em>");
+  return s;
+}
+function md(src) {
+  const lines = esc(src).split("\n"); let out = [], list = null;
+  const flush = () => { if (list) { out.push(`<${list.t}>` + list.items.map(i => "<li>" + inline(i) + "</li>").join("") + `</${list.t}>`); list = null; } };
+  for (const raw of lines) {
+    const l = raw.trimEnd();
+    if (!l.trim()) { flush(); continue; }
+    let m;
+    if (m = l.match(/^#{1,4}\s+(.*)/)) { flush(); out.push("<h3>" + inline(m[1]) + "</h3>"); continue; }
+    if (m = l.match(/^\*\*([^*]+)\*\*:?\s*$/)) { flush(); out.push("<h3>" + inline(m[1]) + "</h3>"); continue; }
+    if (m = l.match(/^[-*]\s+(.*)/)) { if (!list || list.t !== "ul") { flush(); list = { t: "ul", items: [] }; } list.items.push(m[1]); continue; }
+    if (m = l.match(/^\d+\.\s+(.*)/)) { if (!list || list.t !== "ol") { flush(); list = { t: "ol", items: [] }; } list.items.push(m[1]); continue; }
+    if (list && /^\s{2,}/.test(raw)) { list.items[list.items.length - 1] += " " + l.trim(); continue; }
+    flush(); out.push("<p>" + inline(l) + "</p>");
+  }
+  flush(); return out.join("");
+}
+
+/* ---------- today ---------- */
+function fmtDate() {
+  const d = new Date();
+  const w = d.toLocaleDateString("en-US", { weekday: "long" }), mo = d.toLocaleDateString("en-US", { month: "long" });
+  return `${w}, ${d.getDate()} ${mo}`;
+}
+function todayHtml() {
+  const b = S.briefing, stale = b && !b.today;
+  // near-term only: due within 3 days (incl. overdue), not done
+  const near = S.deadlines.filter((d) => d.status !== "done" && d.days <= 3);
+  const needs = near.map((d) =>
+    `<div class="nd">Due ${esc(d.date)}: ${esc(d.item)}</div>`).join("");
+  return `
+  <div class="masthead">
+    <h1 class="display">${fmtDate()}</h1>
+    <div class="subline">${b ? `Morning briefing · ${esc(b.date)}${stale ? ' · <span class="warn">stale</span>' : ""}` : "No briefing yet"}</div>
+    <div id="needs">${needs || '<div class="nd">nothing due in the next 3 days</div>'}</div>
+  </div>
+  ${b ? `<h2>Briefing</h2><article class="prose">${md(b.body)}</article>` : ""}`;
+}
+
+/* ---------- todo (deadlines, interim until rebuild) ---------- */
+let DLS = [];
+function dlTap(i) {
+  const d = DLS[i];
+  const next = { open: "done", "in-progress": "done", done: "open" }[d.status] || "done";
+  d.status = next; // optimistic
+  act("deadline", { date: d.date, item: d.item, status: next }, "deadline: " + d.item.slice(0, 40));
+}
+function dl(d, i) {
+  const cls = d.days < 0 ? "overdue" : d.days <= 3 ? "due-soon" : "";
+  const chip = d.src === "uni"
+    ? `<button class="chip" onclick="dlTap(${i})">${esc(d.status)}</button>`
+    : `<span class="chip">${esc(d.status)}</span>`;
+  return `<div class="card row ${d.status === "done" ? "dim" : ""}">
+    <div><div class="t">${esc(d.item)}</div>
+    <div class="meta ${cls}">${esc(d.date)} · ${d.days < 0 ? -d.days + "d overdue" : d.days === 0 ? "today" : "in " + d.days + "d"} · ${esc(d.domain)}</div></div>
+    ${chip}</div>`;
+}
+function todoHtml() {
+  DLS = S.deadlines.filter((d) => d.status !== "done" || d.days >= -1).slice(0, 40);
+  return `<h2>Deadlines</h2>` + (DLS.map(dl).join("") || '<p class="meta">none</p>');
+}
+
+/* ---------- notes: tell the OS + dictation ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, recOn = false;
+function micToggle(target) {
+  if (recOn) { rec.stop(); return; }
+  rec = new SR();
+  rec.lang = "en-US"; rec.continuous = true; rec.interimResults = true;
+  const ta = $("#" + (target || "tell")), base = ta.value ? ta.value.replace(/\s+$/, "") + " " : "";
+  rec.onresult = (e) => {
+    let text = "";
+    for (const r of e.results) text += r[0].transcript;
+    ta.value = base + text.trim();
+  };
+  rec.onend = () => { recOn = false; setMic(); };
+  rec.onerror = (e) => { toast("dictation: " + e.error); };
+  rec.start(); recOn = true; setMic();
+}
+function setMic() {
+  const b = $("#mic");
+  if (!b) return;
+  b.textContent = recOn ? "listening — tap to stop" : "dictate";
+  b.classList.toggle("live", recOn);
+}
+function sendTell() {
+  if (recOn) rec.stop();
+  const line = $("#tell").value.trim();
+  if (!line) return toast("empty note");
+  act("log", { type: "update", line }, "tell: " + line.slice(0, 40));
+  $("#tell").value = "";
+}
+function notesHtml() {
+  return `
+  <h2>Tell the OS</h2>
+  <textarea id="tell" placeholder="what happened, what changed, what you decided…"></textarea>
+  <div class="row" style="margin-top:10px;gap:8px">
+    ${SR ? '<button id="mic" class="chip" onclick="micToggle()">dictate</button>' : '<span class="meta">use the keyboard mic to dictate</span>'}
+    <button class="btn" style="width:auto;margin:0;flex:1" onclick="sendTell()">Queue note</button>
+  </div>
+  <p class="meta" style="margin-top:10px">Lands in episodic memory next sync; the desktop ingest picks it up from there.</p>`;
+}
+
+/* ---------- ask: questions answered by the Mac's Claude ---------- */
+let ASKS = [], asksErr = "";
+async function loadAsks() {
+  try { ASKS = (await api("/api/ask")).asks || []; asksErr = ""; }
+  catch (e) { asksErr = String(e.message || e); }
+  if (tab === "ask") render();
+}
+async function sendAsk() {
+  if (recOn) rec.stop();
+  const q = $("#ask-q").value.trim();
+  if (!q) return toast("empty question");
+  $("#ask-q").value = "";
+  try {
+    ASKS = (await api("/api/ask", { method: "POST", body: JSON.stringify({ q }) })).asks || ASKS;
+    toast("asked — the Mac answers in a minute or two");
+  } catch (e) { toast("failed: " + e.message); }
+  render();
+}
+function fmtTs(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " " +
+    d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+function askHtml() {
+  const hist = ASKS.map((a) => `
+    <div class="card">
+      <div class="t">${esc(a.q)}</div>
+      <div class="meta">${esc(fmtTs(a.created_at))}</div>
+      ${a.a ? `<div class="prose" style="margin-top:8px">${md(a.a)}</div>`
+            : '<div class="q-tag" style="margin-top:8px">waiting for the Mac…</div>'}
+    </div>`).join("");
+  return `
+  <h2>Ask the OS</h2>
+  <textarea id="ask-q" style="min-height:80px" placeholder="what's due this week? where did the Anthropic app land?…"></textarea>
+  <div class="row" style="margin-top:10px;gap:8px">
+    ${SR ? `<button id="mic" class="chip" onclick="micToggle('ask-q')">dictate</button>` : ""}
+    <button class="btn" style="width:auto;margin:0;flex:1" onclick="sendAsk()">Ask</button>
+  </div>
+  ${asksErr ? `<p class="meta" style="margin-top:10px">couldn't load history: ${esc(asksErr)}</p>` : ""}
+  <h2>History</h2>${hist || '<p class="meta">nothing asked yet</p>'}`;
+}
+
+/* ---------- render ---------- */
+function render() {
+  syncLabel();
+  const m = $("#main");
+  if (!S) { m.innerHTML = `<p class="meta" style="margin-top:20px">No snapshot yet — is the Mac awake and phone_sync running?</p>`; return; }
+  const queued = store.queue.map((q) =>
+    `<div class="card queued row"><span class="t">${esc(q.label)}</span><span class="q-tag">queued</span></div>`).join("");
+  m.innerHTML = queued + (tab === "today" ? todayHtml() : tab === "todo" ? todoHtml()
+    : tab === "ask" ? askHtml() : notesHtml());
+}
+
+function boot() {
+  const authed = !!store.tok;
+  $("#gate").hidden = authed;
+  $("#bar").hidden = $("#main").hidden = !authed;
+  $("#menu").hidden = true;
+  if (authed) refresh();
+}
+boot();
+setInterval(() => { if (store.tok) { refresh(); if (tab === "ask") loadAsks(); } }, 60000);
+setInterval(() => { if (store.tok && tab === "ask" && ASKS.some((a) => !a.a)) loadAsks(); }, 15000);
+setInterval(syncLabel, 30000);
+</script>
+</body>
+</html>
